@@ -228,7 +228,7 @@ partial class MainForm
 
         lblUserId.AutoSize = true;
         lblUserId.Location = new Point(12, 204);
-        lblUserId.Text = "Target UserId";
+        lblUserId.Text = "Current UserId";
         txtUserId.Location = new Point(12, 224);
         txtUserId.Size = new Size(300, 23);
 

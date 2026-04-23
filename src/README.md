@@ -44,7 +44,7 @@
    - `HubUrl`
    - `enc_auth_token`
    - `TenantId`
-   - `Target UserId`
+   - `Current UserId`
 4. 运行后联调
 
 ## 注意

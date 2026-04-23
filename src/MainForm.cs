@@ -608,8 +608,6 @@ public partial class MainForm : Form
             return;
         }
 
-        txtTenantId.Text = user.TenantId?.ToString() ?? "";
-        txtUserId.Text = user.UserId.ToString();
         txtFriendTargetUserId.Text = user.UserId.ToString();
         txtFriendTenancyName.Text = user.TenancyName;
         txtFriendUserName.Text = user.UserName;
@@ -730,13 +728,12 @@ public partial class MainForm : Form
         if (tenantId.HasValue)
         {
             _lastFriendTenantId = tenantId.Value;
-            txtTenantId.Text = tenantId.Value.ToString();
         }
 
         if (userId.HasValue)
         {
             _lastFriendUserId = userId.Value;
-            txtUserId.Text = userId.Value.ToString();
+            txtFriendTargetUserId.Text = userId.Value.ToString();
         }
     }
 
