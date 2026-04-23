@@ -157,7 +157,7 @@ partial class MainForm
         btnLogin.Location = new Point(12, 206);
         btnLogin.Size = new Size(120, 30);
         btnLogin.Text = "登录";
-        btnLogin.Click += btnLogin_Click;
+        btnLogin.Click += btnLogin_ClickAsync;
 
         grpLogin.Controls.Add(lblApiBaseUrl);
         grpLogin.Controls.Add(txtApiBaseUrl);

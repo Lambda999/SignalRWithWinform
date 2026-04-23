@@ -96,7 +96,7 @@ public partial class MainForm : Form
         }
     }
 
-    private async void btnLogin_Click(object? sender, EventArgs e)
+    private async void btnLogin_ClickAsync(object? sender, EventArgs e)
     {
         try
         {
