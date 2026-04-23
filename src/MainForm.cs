@@ -10,6 +10,7 @@ public partial class MainForm : Form
 {
     private readonly DCloudChatHubClient _chatClient = new();
     private readonly string _settingsFilePath = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
+    private string _accessToken = "";
 
     public MainForm()
     {
@@ -51,6 +52,7 @@ public partial class MainForm : Form
             txtGroupName.Text = cfg.Client.GroupName;
             txtSystemTitle.Text = cfg.Client.SystemTitle;
             txtMessage.Text = cfg.Client.Message;
+            _accessToken = cfg.Client.AccessToken;
         }
         catch (Exception ex)
         {
@@ -76,7 +78,8 @@ public partial class MainForm : Form
                     LoginPassword = txtLoginPassword.Text,
                     GroupName = txtGroupName.Text.Trim(),
                     SystemTitle = txtSystemTitle.Text.Trim(),
-                    Message = txtMessage.Text
+                    Message = txtMessage.Text,
+                    AccessToken = _accessToken
                 }
             };
 
@@ -101,6 +104,7 @@ public partial class MainForm : Form
 
             txtEncToken.Text = loginResult.EncryptedAccessToken;
             txtUserId.Text = loginResult.UserId.ToString();
+            _accessToken = loginResult.AccessToken;
             AppendLog($"登录成功，Token 有效秒数: {loginResult.ExpireInSeconds}");
         }
         catch (Exception ex)
@@ -189,7 +193,7 @@ public partial class MainForm : Form
     {
         try
         {
-            var users = await _chatClient.GetOnlineUsersAsync();
+            var users = await GetOnlineUsersByApiAsync();
             lstOnlineUsers.Items.Clear();
             foreach (var user in users.Where(u => u.UserId.HasValue))
             {
@@ -202,6 +206,39 @@ public partial class MainForm : Form
         {
             AppendLog("GetOnlineUsers 异常: " + ex);
             MessageBox.Show(this, ex.Message, "GetOnlineUsers", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private async void btnGetMyOnlineFriends_Click(object? sender, EventArgs e)
+    {
+        try
+        {
+            var friends = await GetMyOnlineFriendsByApiAsync();
+            AppendLog($"GetMyOnlineFriends 成功，在线好友数: {friends.Count}");
+            foreach (var friend in friends.Take(20))
+            {
+                AppendLog($"  - {friend.UserName} ({friend.UserId})");
+            }
+        }
+        catch (Exception ex)
+        {
+            AppendLog("GetMyOnlineFriends 异常: " + ex);
+            MessageBox.Show(this, ex.Message, "GetMyOnlineFriends", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private async void btnIsUserOnline_Click(object? sender, EventArgs e)
+    {
+        try
+        {
+            var userId = ParseRequiredGuid(txtUserId.Text, "Target UserId");
+            var online = await IsUserOnlineByApiAsync(userId);
+            AppendLog($"IsUserOnline 成功: {userId} => {(online ? "在线" : "离线")}");
+        }
+        catch (Exception ex)
+        {
+            AppendLog("IsUserOnline 异常: " + ex);
+            MessageBox.Show(this, ex.Message, "IsUserOnline", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
@@ -388,6 +425,118 @@ public partial class MainForm : Form
         return apiResult.Result;
     }
 
+    private async Task<List<OnlineUserDto>> GetOnlineUsersByApiAsync()
+    {
+        var result = await PostApiAsync<JsonElement>("/api/services/app/Chat/GetOnlineUsers", null);
+        return ParseOnlineUsers(result);
+    }
+
+    private async Task<List<OnlineUserDto>> GetMyOnlineFriendsByApiAsync()
+    {
+        var result = await PostApiAsync<JsonElement>("/api/services/app/Chat/GetMyOnlineFriends", null);
+        return ParseOnlineUsers(result);
+    }
+
+    private async Task<bool> IsUserOnlineByApiAsync(Guid userId)
+    {
+        var result = await PostApiAsync<JsonElement>("/api/services/app/Chat/IsUserOnline", new { userId });
+        return result.ValueKind switch
+        {
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            JsonValueKind.Object when result.TryGetProperty("isOnline", out var isOnline) => isOnline.GetBoolean(),
+            _ => bool.TryParse(result.ToString(), out var online) && online
+        };
+    }
+
+    private async Task<T> PostApiAsync<T>(string path, object? payload)
+    {
+        if (string.IsNullOrWhiteSpace(_accessToken))
+        {
+            throw new InvalidOperationException("请先登录，获取 accessToken 后再调用 API");
+        }
+
+        var hubUri = new Uri(txtHubUrl.Text.Trim());
+        var apiUrl = $"{hubUri.Scheme}://{hubUri.Authority}{path}";
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, apiUrl);
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _accessToken);
+        request.Content = JsonContent.Create(payload ?? new { });
+
+        using var http = new HttpClient();
+        using var response = await http.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+
+        var json = await response.Content.ReadAsStringAsync();
+        var apiResult = JsonSerializer.Deserialize<ApiResponse<T>>(json, JsonOptions.Default)
+                        ?? throw new InvalidOperationException("API 返回为空: " + path);
+        if (!apiResult.Success || apiResult.Result is null)
+        {
+            throw new InvalidOperationException("API 返回失败: " + json);
+        }
+
+        return apiResult.Result;
+    }
+
+    private static List<OnlineUserDto> ParseOnlineUsers(JsonElement result)
+    {
+        var users = new List<OnlineUserDto>();
+        if (result.ValueKind != JsonValueKind.Array)
+        {
+            return users;
+        }
+
+        foreach (var item in result.EnumerateArray())
+        {
+            if (item.ValueKind != JsonValueKind.Object)
+            {
+                continue;
+            }
+
+            var dto = new OnlineUserDto
+            {
+                UserId = TryGetGuid(item, "userId"),
+                UserName = TryGetString(item, "userName", "friendUserName", "name"),
+                TenantId = TryGetGuid(item, "tenantId"),
+                TenancyName = TryGetString(item, "tenancyName", "tenantName")
+            };
+            users.Add(dto);
+        }
+
+        return users;
+    }
+
+    private static Guid? TryGetGuid(JsonElement element, params string[] names)
+    {
+        foreach (var name in names)
+        {
+            if (!element.TryGetProperty(name, out var prop))
+            {
+                continue;
+            }
+
+            if (prop.ValueKind == JsonValueKind.String && Guid.TryParse(prop.GetString(), out var g))
+            {
+                return g;
+            }
+        }
+
+        return null;
+    }
+
+    private static string TryGetString(JsonElement element, params string[] names)
+    {
+        foreach (var name in names)
+        {
+            if (element.TryGetProperty(name, out var prop) && prop.ValueKind == JsonValueKind.String)
+            {
+                return prop.GetString() ?? "";
+            }
+        }
+
+        return "";
+    }
+
     protected override async void OnFormClosing(FormClosingEventArgs e)
     {
         SaveSettings();
@@ -445,6 +594,7 @@ public sealed class ClientSettings
     public string GroupName { get; set; } = "room-1";
     public string SystemTitle { get; set; } = "系统通知";
     public string Message { get; set; } = "你好，这是一条测试消息。";
+    public string AccessToken { get; set; } = "";
 }
 
 internal static class JsonOptions

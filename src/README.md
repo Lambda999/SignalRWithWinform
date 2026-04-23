@@ -6,6 +6,10 @@
 - 独立“登录”分组：调用 `api/TokenAuth/Authenticate` 登录，自动回填 `EncryptedAccessToken`
 - `Register`
 - `GetOnlineUsers`
+- 通过 API（Bearer `accessToken`）查询：
+  - `/api/services/app/Chat/GetOnlineUsers`
+  - `/api/services/app/Chat/GetMyOnlineFriends`
+  - `/api/services/app/Chat/IsUserOnline`
 - `SendMessage`
 - `SendMessageToUser`
 - 给“在线用户列表”中的多选用户批量发送消息
