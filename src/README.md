@@ -3,12 +3,13 @@
 这是一个可直接打开的 .NET 8 WinForms Demo，包含以下功能：
 
 - 连接 SignalR Hub（支持 `enc_auth_token` 查询参数）
-- 调用 `api/TokenAuth/Authenticate` 登录，自动回填 `EncryptedAccessToken`
+- 独立“登录”分组：调用 `api/TokenAuth/Authenticate` 登录，自动回填 `EncryptedAccessToken`
 - `Register`
 - `GetOnlineUsers`
 - `SendMessage`
 - `SendMessageToUser`
 - 给“在线用户列表”中的多选用户批量发送消息
+- 自动保存/恢复界面配置（`appsettings.json`）
 - `JoinGroup`
 - `LeaveGroup`
 - `SendMessageToGroup`
