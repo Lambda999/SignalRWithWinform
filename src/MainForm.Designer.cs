@@ -12,6 +12,18 @@ partial class MainForm
     private GroupBox grpGroup = null!;
     private GroupBox grpBroadcast = null!;
 
+    private Label lblLoginUserName = null!;
+    private Label lblLoginPassword = null!;
+    private Label lblHubUrl = null!;
+    private Label lblEncToken = null!;
+    private Label lblTenantId = null!;
+    private Label lblUserId = null!;
+    private Label lblUserName = null!;
+    private Label lblTenancyName = null!;
+    private Label lblMessage = null!;
+    private Label lblGroupName = null!;
+    private Label lblSystemTitle = null!;
+
     private TextBox txtHubUrl = null!;
     private TextBox txtEncToken = null!;
     private TextBox txtTenantId = null!;
@@ -55,12 +67,52 @@ partial class MainForm
         components = new System.ComponentModel.Container();
         rootLayout = new TableLayoutPanel();
         topLayout = new TableLayoutPanel();
+
         grpLogin = new GroupBox();
         grpConnection = new GroupBox();
         grpSingle = new GroupBox();
         grpGroup = new GroupBox();
         grpBroadcast = new GroupBox();
         txtLog = new TextBox();
+
+        lblLoginUserName = new Label();
+        lblLoginPassword = new Label();
+        lblHubUrl = new Label();
+        lblEncToken = new Label();
+        lblTenantId = new Label();
+        lblUserId = new Label();
+        lblUserName = new Label();
+        lblTenancyName = new Label();
+        lblMessage = new Label();
+        lblGroupName = new Label();
+        lblSystemTitle = new Label();
+
+        txtLoginUserName = new TextBox();
+        txtLoginPassword = new TextBox();
+        txtHubUrl = new TextBox();
+        txtEncToken = new TextBox();
+        txtTenantId = new TextBox();
+        txtUserId = new TextBox();
+        txtUserName = new TextBox();
+        txtTenancyName = new TextBox();
+        txtMessage = new TextBox();
+        txtGroupName = new TextBox();
+        txtSystemTitle = new TextBox();
+
+        btnLogin = new Button();
+        btnConnect = new Button();
+        btnDisconnect = new Button();
+        btnRegister = new Button();
+        btnSendMessage = new Button();
+        btnSendUser = new Button();
+        btnGetOnlineUsers = new Button();
+        btnSendUsers = new Button();
+        btnJoinGroup = new Button();
+        btnLeaveGroup = new Button();
+        btnSendGroup = new Button();
+        btnBroadcast = new Button();
+        btnSendSystem = new Button();
+        lstOnlineUsers = new ListBox();
 
         SuspendLayout();
 
@@ -74,35 +126,17 @@ partial class MainForm
         topLayout.Dock = DockStyle.Top;
         topLayout.AutoSize = true;
         topLayout.ColumnCount = 5;
+        topLayout.RowCount = 1;
         for (var i = 0; i < 5; i++)
         {
             topLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20F));
         }
 
-        grpLogin.Text = "登录";
-        grpLogin.Dock = DockStyle.Fill;
-        grpLogin.Padding = new Padding(10);
-        grpLogin.Controls.Add(BuildLoginPanel());
-
-        grpConnection.Text = "连接";
-        grpConnection.Dock = DockStyle.Fill;
-        grpConnection.Padding = new Padding(10);
-        grpConnection.Controls.Add(BuildConnectionPanel());
-
-        grpSingle.Text = "单聊";
-        grpSingle.Dock = DockStyle.Fill;
-        grpSingle.Padding = new Padding(10);
-        grpSingle.Controls.Add(BuildSinglePanel());
-
-        grpGroup.Text = "群组";
-        grpGroup.Dock = DockStyle.Fill;
-        grpGroup.Padding = new Padding(10);
-        grpGroup.Controls.Add(BuildGroupPanel());
-
-        grpBroadcast.Text = "广播 / 系统消息";
-        grpBroadcast.Dock = DockStyle.Fill;
-        grpBroadcast.Padding = new Padding(10);
-        grpBroadcast.Controls.Add(BuildBroadcastPanel());
+        ConfigureLoginGroup();
+        ConfigureConnectionGroup();
+        ConfigureSingleGroup();
+        ConfigureGroupGroup();
+        ConfigureBroadcastGroup();
 
         topLayout.Controls.Add(grpLogin, 0, 0);
         topLayout.Controls.Add(grpConnection, 1, 0);
@@ -122,7 +156,7 @@ partial class MainForm
 
         AutoScaleDimensions = new SizeF(7F, 17F);
         AutoScaleMode = AutoScaleMode.Font;
-        ClientSize = new Size(1550, 900);
+        ClientSize = new Size(1680, 900);
         Controls.Add(rootLayout);
         StartPosition = FormStartPosition.CenterScreen;
         Text = ".NET 8 WinForms SignalR Demo";
@@ -130,136 +164,220 @@ partial class MainForm
         ResumeLayout(false);
     }
 
-    private Control BuildLoginPanel()
+    private void ConfigureLoginGroup()
     {
-        var panel = NewFieldsPanel();
-        txtLoginUserName = AddTextRow(panel, "UserName", "");
-        txtLoginPassword = AddTextRow(panel, "Password", "");
+        grpLogin.Text = "登录";
+        grpLogin.Dock = DockStyle.Fill;
+
+        lblLoginUserName.Text = "UserName";
+        lblLoginUserName.Location = new Point(12, 30);
+        lblLoginUserName.AutoSize = true;
+
+        txtLoginUserName.Location = new Point(12, 50);
+        txtLoginUserName.Size = new Size(300, 23);
+
+        lblLoginPassword.Text = "Password";
+        lblLoginPassword.Location = new Point(12, 88);
+        lblLoginPassword.AutoSize = true;
+
+        txtLoginPassword.Location = new Point(12, 108);
+        txtLoginPassword.Size = new Size(300, 23);
         txtLoginPassword.UseSystemPasswordChar = true;
 
-        var buttonPanel = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true };
-        btnLogin = NewButton("登录", btnLogin_Click);
-        buttonPanel.Controls.Add(btnLogin);
-        panel.Controls.Add(buttonPanel);
-        return panel;
-    }
+        btnLogin.Text = "登录";
+        btnLogin.Location = new Point(12, 150);
+        btnLogin.Size = new Size(120, 30);
+        btnLogin.Click += btnLogin_Click;
 
-    private Control BuildConnectionPanel()
-    {
-        var panel = NewFieldsPanel();
-        txtHubUrl = AddTextRow(panel, "HubUrl", "http://dcloud-api.adtogroup.com:20980/signalr-chat");
-        txtEncToken = AddTextRow(panel, "enc_auth_token", "");
-        txtTenantId = AddTextRow(panel, "TenantId", "");
-        txtUserId = AddTextRow(panel, "Target UserId", "");
-        txtUserName = AddTextRow(panel, "Sender UserName", "demo-user");
-        txtTenancyName = AddTextRow(panel, "Sender TenancyName", "Default");
-
-        var buttonPanel = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true };
-        btnConnect = NewButton("连接", btnConnect_Click);
-        btnDisconnect = NewButton("断开", btnDisconnect_Click);
-        btnRegister = NewButton("Register", btnRegister_Click);
-        buttonPanel.Controls.AddRange(new Control[] { btnConnect, btnDisconnect, btnRegister });
-        panel.Controls.Add(buttonPanel);
-        return panel;
-    }
-
-    private Control BuildSinglePanel()
-    {
-        var panel = NewFieldsPanel();
-        txtMessage = AddMultiRow(panel, "Message", "你好，这是一条测试消息。", 120);
-
-        var buttonPanel = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true };
-        btnSendMessage = NewButton("SendMessage", btnSendMessage_Click);
-        btnSendUser = NewButton("SendMessageToUser", btnSendUser_Click);
-        btnGetOnlineUsers = NewButton("GetOnlineUsers", btnGetOnlineUsers_Click);
-        btnSendUsers = NewButton("发送给勾选用户", btnSendUsers_Click);
-        buttonPanel.Controls.AddRange(new Control[] { btnSendMessage, btnSendUser, btnGetOnlineUsers, btnSendUsers });
-        panel.Controls.Add(buttonPanel);
-
-        lstOnlineUsers = new ListBox
+        grpLogin.Controls.AddRange(new Control[]
         {
-            Width = 260,
-            Height = 160,
-            SelectionMode = SelectionMode.MultiExtended
-        };
-        panel.Controls.Add(lstOnlineUsers);
-
-        return panel;
+            lblLoginUserName, txtLoginUserName,
+            lblLoginPassword, txtLoginPassword,
+            btnLogin
+        });
     }
 
-    private Control BuildGroupPanel()
+    private void ConfigureConnectionGroup()
     {
-        var panel = NewFieldsPanel();
-        txtGroupName = AddTextRow(panel, "GroupName", "room-1");
+        grpConnection.Text = "连接";
+        grpConnection.Dock = DockStyle.Fill;
 
-        var buttonPanel = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true };
-        btnJoinGroup = NewButton("JoinGroup", btnJoinGroup_Click);
-        btnLeaveGroup = NewButton("LeaveGroup", btnLeaveGroup_Click);
-        btnSendGroup = NewButton("SendMessageToGroup", btnSendGroup_Click);
-        buttonPanel.Controls.AddRange(new Control[] { btnJoinGroup, btnLeaveGroup, btnSendGroup });
-        panel.Controls.Add(buttonPanel);
-        return panel;
-    }
+        lblHubUrl.Text = "HubUrl";
+        lblHubUrl.Location = new Point(12, 30);
+        lblHubUrl.AutoSize = true;
+        txtHubUrl.Location = new Point(12, 50);
+        txtHubUrl.Size = new Size(300, 23);
+        txtHubUrl.Text = "http://dcloud-api.adtogroup.com:20980/signalr-chat";
 
-    private Control BuildBroadcastPanel()
-    {
-        var panel = NewFieldsPanel();
-        txtSystemTitle = AddTextRow(panel, "System Title", "系统通知");
+        lblEncToken.Text = "enc_auth_token";
+        lblEncToken.Location = new Point(12, 88);
+        lblEncToken.AutoSize = true;
+        txtEncToken.Location = new Point(12, 108);
+        txtEncToken.Size = new Size(300, 23);
 
-        var buttonPanel = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true };
-        btnBroadcast = NewButton("BroadcastMessage", btnBroadcast_Click);
-        btnSendSystem = NewButton("SendSystemMessage", btnSendSystem_Click);
-        buttonPanel.Controls.AddRange(new Control[] { btnBroadcast, btnSendSystem });
-        panel.Controls.Add(buttonPanel);
-        return panel;
-    }
+        lblTenantId.Text = "TenantId";
+        lblTenantId.Location = new Point(12, 146);
+        lblTenantId.AutoSize = true;
+        txtTenantId.Location = new Point(12, 166);
+        txtTenantId.Size = new Size(300, 23);
 
-    private static FlowLayoutPanel NewFieldsPanel()
-    {
-        return new FlowLayoutPanel
+        lblUserId.Text = "Target UserId";
+        lblUserId.Location = new Point(12, 204);
+        lblUserId.AutoSize = true;
+        txtUserId.Location = new Point(12, 224);
+        txtUserId.Size = new Size(300, 23);
+
+        lblUserName.Text = "Sender UserName";
+        lblUserName.Location = new Point(12, 262);
+        lblUserName.AutoSize = true;
+        txtUserName.Location = new Point(12, 282);
+        txtUserName.Size = new Size(300, 23);
+        txtUserName.Text = "demo-user";
+
+        lblTenancyName.Text = "Sender TenancyName";
+        lblTenancyName.Location = new Point(12, 320);
+        lblTenancyName.AutoSize = true;
+        txtTenancyName.Location = new Point(12, 340);
+        txtTenancyName.Size = new Size(300, 23);
+        txtTenancyName.Text = "Default";
+
+        btnConnect.Text = "连接";
+        btnConnect.Location = new Point(12, 380);
+        btnConnect.Size = new Size(80, 30);
+        btnConnect.Click += btnConnect_Click;
+
+        btnDisconnect.Text = "断开";
+        btnDisconnect.Location = new Point(100, 380);
+        btnDisconnect.Size = new Size(80, 30);
+        btnDisconnect.Click += btnDisconnect_Click;
+
+        btnRegister.Text = "Register";
+        btnRegister.Location = new Point(188, 380);
+        btnRegister.Size = new Size(90, 30);
+        btnRegister.Click += btnRegister_Click;
+
+        grpConnection.Controls.AddRange(new Control[]
         {
-            Dock = DockStyle.Fill,
-            AutoSize = true,
-            FlowDirection = FlowDirection.TopDown,
-            WrapContents = false
-        };
+            lblHubUrl, txtHubUrl,
+            lblEncToken, txtEncToken,
+            lblTenantId, txtTenantId,
+            lblUserId, txtUserId,
+            lblUserName, txtUserName,
+            lblTenancyName, txtTenancyName,
+            btnConnect, btnDisconnect, btnRegister
+        });
     }
 
-    private static Button NewButton(string text, EventHandler handler)
+    private void ConfigureSingleGroup()
     {
-        var btn = new Button { Text = text, AutoSize = true, Margin = new Padding(3, 3, 10, 3) };
-        btn.Click += handler;
-        return btn;
-    }
+        grpSingle.Text = "单聊";
+        grpSingle.Dock = DockStyle.Fill;
 
-    private static TextBox AddTextRow(Control parent, string labelText, string defaultValue)
-    {
-        var wrapper = new Panel { Width = 280, Height = 52 };
-        var label = new Label { Text = labelText, Left = 0, Top = 0, Width = 260 };
-        var box = new TextBox { Left = 0, Top = 20, Width = 260, Text = defaultValue };
-        wrapper.Controls.Add(label);
-        wrapper.Controls.Add(box);
-        parent.Controls.Add(wrapper);
-        return box;
-    }
+        lblMessage.Text = "Message";
+        lblMessage.Location = new Point(12, 30);
+        lblMessage.AutoSize = true;
 
-    private static TextBox AddMultiRow(Control parent, string labelText, string defaultValue, int height)
-    {
-        var wrapper = new Panel { Width = 280, Height = height + 25 };
-        var label = new Label { Text = labelText, Left = 0, Top = 0, Width = 260 };
-        var box = new TextBox
+        txtMessage.Location = new Point(12, 50);
+        txtMessage.Size = new Size(300, 120);
+        txtMessage.Multiline = true;
+        txtMessage.ScrollBars = ScrollBars.Vertical;
+        txtMessage.Text = "你好，这是一条测试消息。";
+
+        btnSendMessage.Text = "SendMessage";
+        btnSendMessage.Location = new Point(12, 190);
+        btnSendMessage.Size = new Size(130, 30);
+        btnSendMessage.Click += btnSendMessage_Click;
+
+        btnSendUser.Text = "SendMessageToUser";
+        btnSendUser.Location = new Point(150, 190);
+        btnSendUser.Size = new Size(160, 30);
+        btnSendUser.Click += btnSendUser_Click;
+
+        btnGetOnlineUsers.Text = "GetOnlineUsers";
+        btnGetOnlineUsers.Location = new Point(12, 230);
+        btnGetOnlineUsers.Size = new Size(130, 30);
+        btnGetOnlineUsers.Click += btnGetOnlineUsers_Click;
+
+        btnSendUsers.Text = "发送给勾选用户";
+        btnSendUsers.Location = new Point(150, 230);
+        btnSendUsers.Size = new Size(160, 30);
+        btnSendUsers.Click += btnSendUsers_Click;
+
+        lstOnlineUsers.Location = new Point(12, 270);
+        lstOnlineUsers.Size = new Size(300, 140);
+        lstOnlineUsers.SelectionMode = SelectionMode.MultiExtended;
+
+        grpSingle.Controls.AddRange(new Control[]
         {
-            Left = 0,
-            Top = 20,
-            Width = 260,
-            Height = height,
-            Multiline = true,
-            ScrollBars = ScrollBars.Vertical,
-            Text = defaultValue
-        };
-        wrapper.Controls.Add(label);
-        wrapper.Controls.Add(box);
-        parent.Controls.Add(wrapper);
-        return box;
+            lblMessage, txtMessage,
+            btnSendMessage, btnSendUser,
+            btnGetOnlineUsers, btnSendUsers,
+            lstOnlineUsers
+        });
+    }
+
+    private void ConfigureGroupGroup()
+    {
+        grpGroup.Text = "群组";
+        grpGroup.Dock = DockStyle.Fill;
+
+        lblGroupName.Text = "GroupName";
+        lblGroupName.Location = new Point(12, 30);
+        lblGroupName.AutoSize = true;
+
+        txtGroupName.Location = new Point(12, 50);
+        txtGroupName.Size = new Size(300, 23);
+        txtGroupName.Text = "room-1";
+
+        btnJoinGroup.Text = "JoinGroup";
+        btnJoinGroup.Location = new Point(12, 90);
+        btnJoinGroup.Size = new Size(90, 30);
+        btnJoinGroup.Click += btnJoinGroup_Click;
+
+        btnLeaveGroup.Text = "LeaveGroup";
+        btnLeaveGroup.Location = new Point(110, 90);
+        btnLeaveGroup.Size = new Size(100, 30);
+        btnLeaveGroup.Click += btnLeaveGroup_Click;
+
+        btnSendGroup.Text = "SendMessageToGroup";
+        btnSendGroup.Location = new Point(12, 130);
+        btnSendGroup.Size = new Size(198, 30);
+        btnSendGroup.Click += btnSendGroup_Click;
+
+        grpGroup.Controls.AddRange(new Control[]
+        {
+            lblGroupName, txtGroupName,
+            btnJoinGroup, btnLeaveGroup, btnSendGroup
+        });
+    }
+
+    private void ConfigureBroadcastGroup()
+    {
+        grpBroadcast.Text = "广播 / 系统消息";
+        grpBroadcast.Dock = DockStyle.Fill;
+
+        lblSystemTitle.Text = "System Title";
+        lblSystemTitle.Location = new Point(12, 30);
+        lblSystemTitle.AutoSize = true;
+
+        txtSystemTitle.Location = new Point(12, 50);
+        txtSystemTitle.Size = new Size(300, 23);
+        txtSystemTitle.Text = "系统通知";
+
+        btnBroadcast.Text = "BroadcastMessage";
+        btnBroadcast.Location = new Point(12, 90);
+        btnBroadcast.Size = new Size(140, 30);
+        btnBroadcast.Click += btnBroadcast_Click;
+
+        btnSendSystem.Text = "SendSystemMessage";
+        btnSendSystem.Location = new Point(160, 90);
+        btnSendSystem.Size = new Size(152, 30);
+        btnSendSystem.Click += btnSendSystem_Click;
+
+        grpBroadcast.Controls.AddRange(new Control[]
+        {
+            lblSystemTitle, txtSystemTitle,
+            btnBroadcast, btnSendSystem
+        });
     }
 }
