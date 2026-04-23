@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.SignalR.Client;
+using System.Text.Json;
 using WinFormsSignalRDemo.ChatDtos;
 
 namespace WinFormsSignalRDemo;
@@ -14,6 +15,12 @@ public sealed class DCloudChatHubClient
     public event Action<GroupMessageDto>? OnGroupMessage;
     public event Action<BroadcastMessageDto>? OnBroadcastMessage;
     public event Action<SystemMessageDto>? OnSystemMessage;
+    public event Action<JsonElement>? OnChatMessageDto;
+    public event Action<JsonElement, bool>? OnFriendshipRequest;
+    public event Action<JsonElement, bool>? OnUserConnectionChange;
+    public event Action<JsonElement, JsonElement>? OnUserStateChange;
+    public event Action<JsonElement>? OnAllUnreadMessagesRead;
+    public event Action<JsonElement>? OnReadStateChange;
 
     public async Task ConnectAsync(string hubUrl, string encryptedAccessToken)
     {
@@ -69,6 +76,42 @@ public sealed class DCloudChatHubClient
         {
             OnSystemMessage?.Invoke(dto);
             OnLog?.Invoke($"收到系统消息[{dto.Level}] {dto.Title}: {dto.Message}");
+        });
+
+        _connection.On<JsonElement>("getChatMessage", dto =>
+        {
+            OnChatMessageDto?.Invoke(dto);
+            OnLog?.Invoke("收到 getChatMessage: " + dto.GetRawText());
+        });
+
+        _connection.On<JsonElement, bool>("getFriendshipRequest", (dto, isOwnRequest) =>
+        {
+            OnFriendshipRequest?.Invoke(dto, isOwnRequest);
+            OnLog?.Invoke($"收到 getFriendshipRequest (isOwnRequest={isOwnRequest}): {dto.GetRawText()}");
+        });
+
+        _connection.On<JsonElement, bool>("getUserConnectNotification", (user, isConnected) =>
+        {
+            OnUserConnectionChange?.Invoke(user, isConnected);
+            OnLog?.Invoke($"收到 getUserConnectNotification (isConnected={isConnected}): {user.GetRawText()}");
+        });
+
+        _connection.On<JsonElement, JsonElement>("getUserStateChange", (user, newState) =>
+        {
+            OnUserStateChange?.Invoke(user, newState);
+            OnLog?.Invoke($"收到 getUserStateChange: user={user.GetRawText()}, state={newState.GetRawText()}");
+        });
+
+        _connection.On<JsonElement>("getallUnreadMessagesOfUserRead", user =>
+        {
+            OnAllUnreadMessagesRead?.Invoke(user);
+            OnLog?.Invoke("收到 getallUnreadMessagesOfUserRead: " + user.GetRawText());
+        });
+
+        _connection.On<JsonElement>("getReadStateChange", user =>
+        {
+            OnReadStateChange?.Invoke(user);
+            OnLog?.Invoke("收到 getReadStateChange: " + user.GetRawText());
         });
 
         await _connection.StartAsync();
@@ -135,6 +178,12 @@ public sealed class DCloudChatHubClient
     {
         EnsureConnected();
         return await _connection!.InvokeAsync<string>("SendSystemMessage", input);
+    }
+
+    public async Task<List<OnlineUserDto>> GetOnlineUsersAsync()
+    {
+        EnsureConnected();
+        return await _connection!.InvokeAsync<List<OnlineUserDto>>("GetOnlineUsers");
     }
 
     private void EnsureConnected()

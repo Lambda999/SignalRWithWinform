@@ -2,20 +2,47 @@
 
 这是一个可直接打开的 .NET 8 WinForms Demo，包含以下功能：
 
-- 连接 SignalR Hub（支持 `enc_auth_token` 查询参数）
+- 连接 SignalR Hub（HubUrl 自动由 `Api Base Url + signalr-chat` 生成）
+- 独立“登录”分组：调用 `api/TokenAuth/Authenticate` 登录，自动回填 `EncryptedAccessToken`
 - `Register`
+- `GetOnlineUsers`
+- 通过 API（Bearer `accessToken`）查询：
+  - `/api/services/app/Chat/GetOnlineUsers`
+  - `/api/services/app/Chat/GetMyOnlineFriends`
+  - `/api/services/app/Chat/IsUserOnline`
 - `SendMessage`
 - `SendMessageToUser`
+- 给“在线用户列表”中的多选用户批量发送消息
+- 自动保存/恢复界面配置（`appsettings.json`）
 - `JoinGroup`
 - `LeaveGroup`
 - `SendMessageToGroup`
 - `BroadcastMessage`
 - `SendSystemMessage`
+- 好友管理服务（API）按钮：
+  - `/api/services/app/Friendship/CreateFriendshipRequest`
+  - `/api/services/app/Friendship/CreateFriendshipWithDifferentTenant`
+  - `/api/services/app/Friendship/CreateFriendshipForCurrentTenant`
+  - `/api/services/app/Friendship/GetAllFriendships`
+  - `/api/services/app/Friendship/BlockUser`
+  - `/api/services/app/Friendship/UnblockUser`
+  - `/api/services/app/Friendship/AcceptFriendshipRequest`
+  - `/api/services/app/Friendship/RemoveFriend`
+  - Friendship 分组新增 `Target UserId` 文本框（可手动修改）
+  - 两个列表（在线用户/好友）选中后都会把 `UserId` 回填到该文本框
+  - `GetAllFriendships` 会加载“我的全部好友”到好友列表
+  - `CreateFriendshipRequest` 与 `Block/Unblock/Accept/Remove` 的目标 `userId` 均来自该文本框
 - 接收事件：
   - `ReceiveMessage`
   - `ReceiveGroupMessage`
   - `ReceiveBroadcastMessage`
   - `ReceiveSystemMessage`
+  - `getChatMessage`
+  - `getFriendshipRequest`
+  - `getUserConnectNotification`
+  - `getUserStateChange`
+  - `getallUnreadMessagesOfUserRead`
+  - `getReadStateChange`
 
 ## 使用方法
 
@@ -25,7 +52,7 @@
    - `HubUrl`
    - `enc_auth_token`
    - `TenantId`
-   - `Target UserId`
+   - `Current UserId`
 4. 运行后联调
 
 ## 注意
