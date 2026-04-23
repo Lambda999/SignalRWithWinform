@@ -11,6 +11,8 @@ public partial class MainForm : Form
     private readonly DCloudChatHubClient _chatClient = new();
     private readonly string _settingsFilePath = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
     private string _accessToken = "";
+    private Guid? _lastFriendTenantId;
+    private Guid? _lastFriendUserId;
 
     public MainForm()
     {
@@ -53,6 +55,8 @@ public partial class MainForm : Form
             txtLoginPassword.Text = cfg.Client.LoginPassword;
             txtGroupName.Text = cfg.Client.GroupName;
             txtSystemTitle.Text = cfg.Client.SystemTitle;
+            txtFriendTenancyName.Text = cfg.Client.FriendTenancyName;
+            txtFriendUserName.Text = cfg.Client.FriendUserName;
             txtMessage.Text = cfg.Client.Message;
             _accessToken = cfg.Client.AccessToken;
             SyncHubUrlFromApiBase();
@@ -82,6 +86,8 @@ public partial class MainForm : Form
                     LoginPassword = txtLoginPassword.Text,
                     GroupName = txtGroupName.Text.Trim(),
                     SystemTitle = txtSystemTitle.Text.Trim(),
+                    FriendTenancyName = txtFriendTenancyName.Text.Trim(),
+                    FriendUserName = txtFriendUserName.Text.Trim(),
                     Message = txtMessage.Text,
                     AccessToken = _accessToken
                 }
@@ -245,6 +251,52 @@ public partial class MainForm : Form
             AppendLog("IsUserOnline 异常: " + ex);
             MessageBox.Show(this, ex.Message, "IsUserOnline", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
+    }
+
+    private async void btnCreateFriendshipRequest_Click(object? sender, EventArgs e)
+    {
+        await InvokeFriendshipApi("CreateFriendshipRequest", new
+        {
+            tenantId = ParseNullableGuid(txtTenantId.Text),
+            userId = ParseRequiredGuid(txtUserId.Text, "Target UserId")
+        });
+    }
+
+    private async void btnCreateFriendshipWithDifferentTenant_Click(object? sender, EventArgs e)
+    {
+        await InvokeFriendshipApi("CreateFriendshipWithDifferentTenant", new
+        {
+            tenancyName = txtFriendTenancyName.Text.Trim(),
+            userName = txtFriendUserName.Text.Trim()
+        });
+    }
+
+    private async void btnCreateFriendshipForCurrentTenant_Click(object? sender, EventArgs e)
+    {
+        await InvokeFriendshipApi("CreateFriendshipForCurrentTenant", new
+        {
+            userName = txtFriendUserName.Text.Trim()
+        });
+    }
+
+    private async void btnBlockUser_Click(object? sender, EventArgs e)
+    {
+        await InvokeFriendshipApi("BlockUser", BuildFriendIdentityInput());
+    }
+
+    private async void btnUnblockUser_Click(object? sender, EventArgs e)
+    {
+        await InvokeFriendshipApi("UnblockUser", BuildFriendIdentityInput());
+    }
+
+    private async void btnAcceptFriendshipRequest_Click(object? sender, EventArgs e)
+    {
+        await InvokeFriendshipApi("AcceptFriendshipRequest", BuildFriendIdentityInput());
+    }
+
+    private async void btnRemoveFriend_Click(object? sender, EventArgs e)
+    {
+        await InvokeFriendshipApi("RemoveFriend", BuildFriendIdentityInput());
     }
 
     private async void btnSendUsers_Click(object? sender, EventArgs e)
@@ -482,6 +534,37 @@ public partial class MainForm : Form
         return apiResult.Result;
     }
 
+    private async Task InvokeFriendshipApi(string actionName, object payload)
+    {
+        try
+        {
+            var result = await PostApiAsync<JsonElement>($"/api/services/app/Friendship/{actionName}", payload);
+            CaptureFriendIdentityFromResult(result);
+            AppendLog($"Friendship.{actionName} 成功: {CompactJson(result)}");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Friendship.{actionName} 异常: {ex}");
+            MessageBox.Show(this, ex.Message, $"Friendship.{actionName}", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private object BuildFriendIdentityInput()
+    {
+        var tenantId = ParseNullableGuid(txtTenantId.Text) ?? _lastFriendTenantId;
+        var userId = ParseNullableGuid(txtUserId.Text) ?? _lastFriendUserId;
+        if (!userId.HasValue)
+        {
+            throw new InvalidOperationException("Target UserId 不能为空");
+        }
+
+        return new
+        {
+            tenantId,
+            userId = userId.Value
+        };
+    }
+
     private void txtApiBaseUrl_TextChanged(object? sender, EventArgs e)
     {
         SyncHubUrlFromApiBase();
@@ -584,6 +667,40 @@ public partial class MainForm : Form
         return "";
     }
 
+    private void CaptureFriendIdentityFromResult(JsonElement result)
+    {
+        if (result.ValueKind != JsonValueKind.Object)
+        {
+            return;
+        }
+
+        var tenantId = TryGetGuid(result, "friendTenantId", "tenantId");
+        var userId = TryGetGuid(result, "friendUserId", "userId");
+
+        if (tenantId.HasValue)
+        {
+            _lastFriendTenantId = tenantId.Value;
+            txtTenantId.Text = tenantId.Value.ToString();
+        }
+
+        if (userId.HasValue)
+        {
+            _lastFriendUserId = userId.Value;
+            txtUserId.Text = userId.Value.ToString();
+        }
+    }
+
+    private static string CompactJson(JsonElement element)
+    {
+        var raw = element.GetRawText();
+        if (raw.Length <= 300)
+        {
+            return raw;
+        }
+
+        return raw[..300] + "...";
+    }
+
     protected override async void OnFormClosing(FormClosingEventArgs e)
     {
         SaveSettings();
@@ -643,6 +760,8 @@ public sealed class ClientSettings
     public string LoginPassword { get; set; } = "";
     public string GroupName { get; set; } = "room-1";
     public string SystemTitle { get; set; } = "系统通知";
+    public string FriendTenancyName { get; set; } = "Default";
+    public string FriendUserName { get; set; } = "";
     public string Message { get; set; } = "你好，这是一条测试消息。";
     public string AccessToken { get; set; } = "";
 }

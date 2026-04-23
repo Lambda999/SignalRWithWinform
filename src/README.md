@@ -19,6 +19,14 @@
 - `SendMessageToGroup`
 - `BroadcastMessage`
 - `SendSystemMessage`
+- 好友管理服务（API）按钮：
+  - `/api/services/app/Friendship/CreateFriendshipRequest`
+  - `/api/services/app/Friendship/CreateFriendshipWithDifferentTenant`
+  - `/api/services/app/Friendship/CreateFriendshipForCurrentTenant`
+  - `/api/services/app/Friendship/BlockUser`
+  - `/api/services/app/Friendship/UnblockUser`
+  - `/api/services/app/Friendship/AcceptFriendshipRequest`
+  - `/api/services/app/Friendship/RemoveFriend`
 - 接收事件：
   - `ReceiveMessage`
   - `ReceiveGroupMessage`
