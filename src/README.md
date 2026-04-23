@@ -37,6 +37,12 @@
   - `ReceiveGroupMessage`
   - `ReceiveBroadcastMessage`
   - `ReceiveSystemMessage`
+  - `getChatMessage`
+  - `getFriendshipRequest`
+  - `getUserConnectNotification`
+  - `getUserStateChange`
+  - `getallUnreadMessagesOfUserRead`
+  - `getReadStateChange`
 
 ## 使用方法
 

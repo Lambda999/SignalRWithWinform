@@ -23,6 +23,17 @@ public partial class MainForm : Form
         _chatClient.OnGroupMessage += dto => AppendLog($"[群消息][{dto.GroupName}] {dto.SenderUserName}: {dto.Message}");
         _chatClient.OnBroadcastMessage += dto => AppendLog($"[广播事件] {dto.SenderUserName}: {dto.Message}");
         _chatClient.OnSystemMessage += dto => AppendLog($"[系统消息事件][{dto.Level}] {dto.Title}: {dto.Message}");
+        _chatClient.OnChatMessageDto += dto => AppendLog("[服务器事件:getChatMessage] " + dto.GetRawText());
+        _chatClient.OnFriendshipRequest += (dto, isOwnRequest) =>
+            AppendLog($"[服务器事件:getFriendshipRequest][isOwnRequest={isOwnRequest}] {dto.GetRawText()}");
+        _chatClient.OnUserConnectionChange += (user, isConnected) =>
+            AppendLog($"[服务器事件:getUserConnectNotification][isConnected={isConnected}] {user.GetRawText()}");
+        _chatClient.OnUserStateChange += (user, newState) =>
+            AppendLog($"[服务器事件:getUserStateChange] user={user.GetRawText()}, state={newState.GetRawText()}");
+        _chatClient.OnAllUnreadMessagesRead += user =>
+            AppendLog("[服务器事件:getallUnreadMessagesOfUserRead] " + user.GetRawText());
+        _chatClient.OnReadStateChange += user =>
+            AppendLog("[服务器事件:getReadStateChange] " + user.GetRawText());
 
         LoadSettings();
         SyncHubUrlFromApiBase();
