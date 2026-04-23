@@ -1,32 +1,13 @@
+using System.Net.Http.Json;
+using System.Text.Json;
 using WinFormsSignalRDemo.ChatDtos;
 
 namespace WinFormsSignalRDemo;
 
-public sealed class MainForm : Form
+public partial class MainForm : Form
 {
     private readonly DCloudChatHubClient _chatClient = new();
-
-    private TextBox txtHubUrl = null!;
-    private TextBox txtEncToken = null!;
-    private TextBox txtTenantId = null!;
-    private TextBox txtUserId = null!;
-    private TextBox txtUserName = null!;
-    private TextBox txtTenancyName = null!;
-    private TextBox txtGroupName = null!;
-    private TextBox txtSystemTitle = null!;
-    private TextBox txtMessage = null!;
-    private TextBox txtLog = null!;
-
-    private Button btnConnect = null!;
-    private Button btnDisconnect = null!;
-    private Button btnRegister = null!;
-    private Button btnSendMessage = null!;
-    private Button btnSendUser = null!;
-    private Button btnJoinGroup = null!;
-    private Button btnLeaveGroup = null!;
-    private Button btnSendGroup = null!;
-    private Button btnBroadcast = null!;
-    private Button btnSendSystem = null!;
+    private readonly string _settingsFilePath = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
 
     public MainForm()
     {
@@ -37,177 +18,98 @@ public sealed class MainForm : Form
         _chatClient.OnGroupMessage += dto => AppendLog($"[群消息][{dto.GroupName}] {dto.SenderUserName}: {dto.Message}");
         _chatClient.OnBroadcastMessage += dto => AppendLog($"[广播事件] {dto.SenderUserName}: {dto.Message}");
         _chatClient.OnSystemMessage += dto => AppendLog($"[系统消息事件][{dto.Level}] {dto.Title}: {dto.Message}");
+
+        LoadSettings();
     }
 
-    private void InitializeComponent()
+    private void LoadSettings()
     {
-        Text = ".NET 8 WinForms SignalR Demo";
-        StartPosition = FormStartPosition.CenterScreen;
-        Width = 1300;
-        Height = 900;
-
-        var root = new TableLayoutPanel
+        if (!File.Exists(_settingsFilePath))
         {
-            Dock = DockStyle.Fill,
-            ColumnCount = 1,
-            RowCount = 2,
-            Padding = new Padding(10)
-        };
-        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        Controls.Add(root);
+            return;
+        }
 
-        var top = new TableLayoutPanel
+        try
         {
-            Dock = DockStyle.Top,
-            ColumnCount = 4,
-            AutoSize = true
-        };
-        top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
-        top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
-        top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
-        top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
-        root.Controls.Add(top, 0, 0);
+            var json = File.ReadAllText(_settingsFilePath);
+            var cfg = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions.Default);
+            if (cfg?.Client is null)
+            {
+                return;
+            }
 
-        top.Controls.Add(BuildConnectionGroup(), 0, 0);
-        top.Controls.Add(BuildSingleGroup(), 1, 0);
-        top.Controls.Add(BuildGroupGroup(), 2, 0);
-        top.Controls.Add(BuildBroadcastSystemGroup(), 3, 0);
-
-        txtLog = new TextBox
+            txtHubUrl.Text = cfg.Client.HubUrl;
+            txtEncToken.Text = cfg.Client.EncAuthToken;
+            txtTenantId.Text = cfg.Client.TenantId;
+            txtUserId.Text = cfg.Client.TargetUserId;
+            txtUserName.Text = cfg.Client.SenderUserName;
+            txtTenancyName.Text = cfg.Client.SenderTenancyName;
+            txtLoginUserName.Text = cfg.Client.LoginUserName;
+            txtLoginPassword.Text = cfg.Client.LoginPassword;
+            txtGroupName.Text = cfg.Client.GroupName;
+            txtSystemTitle.Text = cfg.Client.SystemTitle;
+            txtMessage.Text = cfg.Client.Message;
+        }
+        catch (Exception ex)
         {
-            Dock = DockStyle.Fill,
-            Multiline = true,
-            ScrollBars = ScrollBars.Both,
-            ReadOnly = true,
-            Font = new Font("Consolas", 10F),
-            WordWrap = false
-        };
-        root.Controls.Add(txtLog, 0, 1);
+            AppendLog("读取 appsettings.json 失败: " + ex.Message);
+        }
     }
 
-    private GroupBox BuildConnectionGroup()
+    private void SaveSettings()
     {
-        var box = new GroupBox { Text = "连接", Dock = DockStyle.Fill, Padding = new Padding(10), AutoSize = true };
-        var panel = NewFieldsPanel();
-
-        txtHubUrl = AddTextRow(panel, "HubUrl", "http://dcloud-api.adtogroup.com:20980/signalr-chat");
-        txtEncToken = AddTextRow(panel, "enc_auth_token", "");
-        txtTenantId = AddTextRow(panel, "TenantId", "");
-        txtUserId = AddTextRow(panel, "Target UserId", "");
-        txtUserName = AddTextRow(panel, "Sender UserName", "demo-user");
-        txtTenancyName = AddTextRow(panel, "Sender TenancyName", "Default");
-
-        var buttonPanel = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true };
-        btnConnect = NewButton("连接", btnConnect_Click);
-        btnDisconnect = NewButton("断开", btnDisconnect_Click);
-        btnRegister = NewButton("Register", btnRegister_Click);
-        buttonPanel.Controls.AddRange(new Control[] { btnConnect, btnDisconnect, btnRegister });
-        panel.Controls.Add(buttonPanel);
-
-        box.Controls.Add(panel);
-        return box;
-    }
-
-    private GroupBox BuildSingleGroup()
-    {
-        var box = new GroupBox { Text = "单聊", Dock = DockStyle.Fill, Padding = new Padding(10), AutoSize = true };
-        var panel = NewFieldsPanel();
-
-        txtMessage = AddMultiRow(panel, "Message", "你好，这是一条测试消息。", 120);
-
-        var buttonPanel = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true };
-        btnSendMessage = NewButton("SendMessage", btnSendMessage_Click);
-        btnSendUser = NewButton("SendMessageToUser", btnSendUser_Click);
-        buttonPanel.Controls.AddRange(new Control[] { btnSendMessage, btnSendUser });
-        panel.Controls.Add(buttonPanel);
-
-        box.Controls.Add(panel);
-        return box;
-    }
-
-    private GroupBox BuildGroupGroup()
-    {
-        var box = new GroupBox { Text = "群组", Dock = DockStyle.Fill, Padding = new Padding(10), AutoSize = true };
-        var panel = NewFieldsPanel();
-
-        txtGroupName = AddTextRow(panel, "GroupName", "room-1");
-
-        var buttonPanel = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true };
-        btnJoinGroup = NewButton("JoinGroup", btnJoinGroup_Click);
-        btnLeaveGroup = NewButton("LeaveGroup", btnLeaveGroup_Click);
-        btnSendGroup = NewButton("SendMessageToGroup", btnSendGroup_Click);
-        buttonPanel.Controls.AddRange(new Control[] { btnJoinGroup, btnLeaveGroup, btnSendGroup });
-        panel.Controls.Add(buttonPanel);
-
-        box.Controls.Add(panel);
-        return box;
-    }
-
-    private GroupBox BuildBroadcastSystemGroup()
-    {
-        var box = new GroupBox { Text = "广播 / 系统消息", Dock = DockStyle.Fill, Padding = new Padding(10), AutoSize = true };
-        var panel = NewFieldsPanel();
-
-        txtSystemTitle = AddTextRow(panel, "System Title", "系统通知");
-
-        var buttonPanel = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true };
-        btnBroadcast = NewButton("BroadcastMessage", btnBroadcast_Click);
-        btnSendSystem = NewButton("SendSystemMessage", btnSendSystem_Click);
-        buttonPanel.Controls.AddRange(new Control[] { btnBroadcast, btnSendSystem });
-        panel.Controls.Add(buttonPanel);
-
-        box.Controls.Add(panel);
-        return box;
-    }
-
-    private static FlowLayoutPanel NewFieldsPanel()
-    {
-        return new FlowLayoutPanel
+        try
         {
-            Dock = DockStyle.Fill,
-            AutoSize = true,
-            FlowDirection = FlowDirection.TopDown,
-            WrapContents = false
-        };
-    }
+            var cfg = new AppSettings
+            {
+                Client = new ClientSettings
+                {
+                    HubUrl = txtHubUrl.Text.Trim(),
+                    EncAuthToken = txtEncToken.Text.Trim(),
+                    TenantId = txtTenantId.Text.Trim(),
+                    TargetUserId = txtUserId.Text.Trim(),
+                    SenderUserName = txtUserName.Text.Trim(),
+                    SenderTenancyName = txtTenancyName.Text.Trim(),
+                    LoginUserName = txtLoginUserName.Text.Trim(),
+                    LoginPassword = txtLoginPassword.Text,
+                    GroupName = txtGroupName.Text.Trim(),
+                    SystemTitle = txtSystemTitle.Text.Trim(),
+                    Message = txtMessage.Text
+                }
+            };
 
-    private static Button NewButton(string text, EventHandler handler)
-    {
-        var btn = new Button { Text = text, AutoSize = true, Margin = new Padding(3, 3, 10, 3) };
-        btn.Click += handler;
-        return btn;
-    }
-
-    private static TextBox AddTextRow(Control parent, string labelText, string defaultValue)
-    {
-        var wrapper = new Panel { Width = 280, Height = 52 };
-        var label = new Label { Text = labelText, Left = 0, Top = 0, Width = 260 };
-        var box = new TextBox { Left = 0, Top = 20, Width = 260, Text = defaultValue };
-        wrapper.Controls.Add(label);
-        wrapper.Controls.Add(box);
-        parent.Controls.Add(wrapper);
-        return box;
-    }
-
-    private static TextBox AddMultiRow(Control parent, string labelText, string defaultValue, int height)
-    {
-        var wrapper = new Panel { Width = 280, Height = height + 25 };
-        var label = new Label { Text = labelText, Left = 0, Top = 0, Width = 260 };
-        var box = new TextBox
+            var json = JsonSerializer.Serialize(cfg, JsonOptions.Indented);
+            File.WriteAllText(_settingsFilePath, json);
+        }
+        catch (Exception ex)
         {
-            Left = 0,
-            Top = 20,
-            Width = 260,
-            Height = height,
-            Multiline = true,
-            ScrollBars = ScrollBars.Vertical,
-            Text = defaultValue
-        };
-        wrapper.Controls.Add(label);
-        wrapper.Controls.Add(box);
-        parent.Controls.Add(wrapper);
-        return box;
+            AppendLog("保存 appsettings.json 失败: " + ex.Message);
+        }
+    }
+
+    private async void btnLogin_Click(object? sender, EventArgs e)
+    {
+        try
+        {
+            btnLogin.Enabled = false;
+            var loginResult = await AuthenticateAsync(
+                txtHubUrl.Text.Trim(),
+                txtLoginUserName.Text.Trim(),
+                txtLoginPassword.Text);
+
+            txtEncToken.Text = loginResult.EncryptedAccessToken;
+            txtUserId.Text = loginResult.UserId.ToString();
+            AppendLog($"登录成功，Token 有效秒数: {loginResult.ExpireInSeconds}");
+        }
+        catch (Exception ex)
+        {
+            AppendLog("登录失败: " + ex);
+            MessageBox.Show(this, ex.Message, "登录失败", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        finally
+        {
+            btnLogin.Enabled = true;
+        }
     }
 
     private async void btnConnect_Click(object? sender, EventArgs e)
@@ -254,6 +156,52 @@ public sealed class MainForm : Form
     private async void btnSendUser_Click(object? sender, EventArgs e)
     {
         await InvokeWithResult(async () => await _chatClient.SendMessageToUserAsync(BuildSendChatMessageInput()), "SendMessageToUser");
+    }
+
+    private async void btnGetOnlineUsers_Click(object? sender, EventArgs e)
+    {
+        try
+        {
+            var users = await _chatClient.GetOnlineUsersAsync();
+            lstOnlineUsers.Items.Clear();
+            foreach (var user in users.Where(u => u.UserId.HasValue))
+            {
+                lstOnlineUsers.Items.Add(new OnlineUserListItem(user));
+            }
+
+            AppendLog($"GetOnlineUsers 成功，在线用户数: {users.Count}");
+        }
+        catch (Exception ex)
+        {
+            AppendLog("GetOnlineUsers 异常: " + ex);
+            MessageBox.Show(this, ex.Message, "GetOnlineUsers", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private async void btnSendUsers_Click(object? sender, EventArgs e)
+    {
+        try
+        {
+            var selected = lstOnlineUsers.SelectedItems.Cast<OnlineUserListItem>().ToList();
+            if (selected.Count == 0)
+            {
+                throw new InvalidOperationException("请先在在线用户列表里选择至少 1 个用户");
+            }
+
+            foreach (var user in selected)
+            {
+                var input = BuildSendChatMessageInput();
+                input.UserId = user.UserId;
+                await _chatClient.SendMessageToUserAsync(input);
+            }
+
+            AppendLog($"已向 {selected.Count} 个在线用户发送消息");
+        }
+        catch (Exception ex)
+        {
+            AppendLog("发送给勾选用户 异常: " + ex);
+            MessageBox.Show(this, ex.Message, "发送给勾选用户", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 
     private async void btnJoinGroup_Click(object? sender, EventArgs e)
@@ -365,10 +313,118 @@ public sealed class MainForm : Form
     {
         if (txtLog.InvokeRequired)
         {
-            txtLog.Invoke(new Action(() => AppendLog(message))); 
+            txtLog.Invoke(new Action(() => AppendLog(message)));
             return;
         }
 
         txtLog.AppendText($"[{DateTime.Now:HH:mm:ss}] {message}{Environment.NewLine}");
     }
+
+    private static async Task<LoginResult> AuthenticateAsync(string hubUrl, string username, string password)
+    {
+        if (string.IsNullOrWhiteSpace(hubUrl))
+        {
+            throw new InvalidOperationException("HubUrl 不能为空");
+        }
+
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            throw new InvalidOperationException("Login UserName 不能为空");
+        }
+
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            throw new InvalidOperationException("Login Password 不能为空");
+        }
+
+        var hubUri = new Uri(hubUrl);
+        var apiBase = $"{hubUri.Scheme}://{hubUri.Authority}";
+        var authUrl = $"{apiBase}/api/TokenAuth/Authenticate";
+
+        using var http = new HttpClient();
+        var response = await http.PostAsJsonAsync(authUrl, new LoginRequest
+        {
+            UserName = username,
+            Password = password
+        });
+        response.EnsureSuccessStatusCode();
+
+        var json = await response.Content.ReadAsStringAsync();
+        var apiResult = JsonSerializer.Deserialize<ApiResponse<LoginResult>>(json, JsonOptions.Default)
+                        ?? throw new InvalidOperationException("登录接口返回为空");
+
+        if (!apiResult.Success || apiResult.Result is null)
+        {
+            throw new InvalidOperationException("登录接口返回失败: " + json);
+        }
+
+        return apiResult.Result;
+    }
+
+    protected override async void OnFormClosing(FormClosingEventArgs e)
+    {
+        SaveSettings();
+
+        if (_chatClient.Connection is not null)
+        {
+            try
+            {
+                await _chatClient.DisconnectAsync();
+            }
+            catch
+            {
+                // ignore
+            }
+        }
+
+        base.OnFormClosing(e);
+    }
+
+    private sealed class OnlineUserListItem
+    {
+        public Guid UserId { get; }
+        public string UserName { get; }
+        public string TenancyName { get; }
+
+        public OnlineUserListItem(OnlineUserDto user)
+        {
+            UserId = user.UserId ?? Guid.Empty;
+            UserName = user.UserName;
+            TenancyName = user.TenancyName;
+        }
+
+        public override string ToString()
+        {
+            return $"{UserName} ({UserId}) [{TenancyName}]";
+        }
+    }
+}
+
+public sealed class AppSettings
+{
+    public ClientSettings Client { get; set; } = new();
+}
+
+public sealed class ClientSettings
+{
+    public string HubUrl { get; set; } = "";
+    public string EncAuthToken { get; set; } = "";
+    public string TenantId { get; set; } = "";
+    public string TargetUserId { get; set; } = "";
+    public string SenderUserName { get; set; } = "demo-user";
+    public string SenderTenancyName { get; set; } = "Default";
+    public string LoginUserName { get; set; } = "";
+    public string LoginPassword { get; set; } = "";
+    public string GroupName { get; set; } = "room-1";
+    public string SystemTitle { get; set; } = "系统通知";
+    public string Message { get; set; } = "你好，这是一条测试消息。";
+}
+
+internal static class JsonOptions
+{
+    public static readonly JsonSerializerOptions Default = new(JsonSerializerDefaults.Web);
+    public static readonly JsonSerializerOptions Indented = new(JsonSerializerDefaults.Web)
+    {
+        WriteIndented = true
+    };
 }
