@@ -137,6 +137,12 @@ public sealed class DCloudChatHubClient
         return await _connection!.InvokeAsync<string>("SendSystemMessage", input);
     }
 
+    public async Task<List<OnlineUserDto>> GetOnlineUsersAsync()
+    {
+        EnsureConnected();
+        return await _connection!.InvokeAsync<List<OnlineUserDto>>("GetOnlineUsers");
+    }
+
     private void EnsureConnected()
     {
         if (_connection is null || _connection.State != HubConnectionState.Connected)
