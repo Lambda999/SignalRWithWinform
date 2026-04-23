@@ -1,4 +1,6 @@
 using WinFormsSignalRDemo.ChatDtos;
+using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace WinFormsSignalRDemo;
 
@@ -12,6 +14,8 @@ public sealed class MainForm : Form
     private TextBox txtUserId = null!;
     private TextBox txtUserName = null!;
     private TextBox txtTenancyName = null!;
+    private TextBox txtLoginUserName = null!;
+    private TextBox txtLoginPassword = null!;
     private TextBox txtGroupName = null!;
     private TextBox txtSystemTitle = null!;
     private TextBox txtMessage = null!;
@@ -20,13 +24,17 @@ public sealed class MainForm : Form
     private Button btnConnect = null!;
     private Button btnDisconnect = null!;
     private Button btnRegister = null!;
+    private Button btnLogin = null!;
+    private Button btnGetOnlineUsers = null!;
     private Button btnSendMessage = null!;
     private Button btnSendUser = null!;
+    private Button btnSendUsers = null!;
     private Button btnJoinGroup = null!;
     private Button btnLeaveGroup = null!;
     private Button btnSendGroup = null!;
     private Button btnBroadcast = null!;
     private Button btnSendSystem = null!;
+    private ListBox lstOnlineUsers = null!;
 
     public MainForm()
     {
@@ -93,16 +101,20 @@ public sealed class MainForm : Form
 
         txtHubUrl = AddTextRow(panel, "HubUrl", "http://dcloud-api.adtogroup.com:20980/signalr-chat");
         txtEncToken = AddTextRow(panel, "enc_auth_token", "");
+        txtLoginUserName = AddTextRow(panel, "Login UserName", "");
+        txtLoginPassword = AddTextRow(panel, "Login Password", "");
+        txtLoginPassword.UseSystemPasswordChar = true;
         txtTenantId = AddTextRow(panel, "TenantId", "");
         txtUserId = AddTextRow(panel, "Target UserId", "");
         txtUserName = AddTextRow(panel, "Sender UserName", "demo-user");
         txtTenancyName = AddTextRow(panel, "Sender TenancyName", "Default");
 
         var buttonPanel = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true };
+        btnLogin = NewButton("登录", btnLogin_Click);
         btnConnect = NewButton("连接", btnConnect_Click);
         btnDisconnect = NewButton("断开", btnDisconnect_Click);
         btnRegister = NewButton("Register", btnRegister_Click);
-        buttonPanel.Controls.AddRange(new Control[] { btnConnect, btnDisconnect, btnRegister });
+        buttonPanel.Controls.AddRange(new Control[] { btnLogin, btnConnect, btnDisconnect, btnRegister });
         panel.Controls.Add(buttonPanel);
 
         box.Controls.Add(panel);
@@ -119,8 +131,18 @@ public sealed class MainForm : Form
         var buttonPanel = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true };
         btnSendMessage = NewButton("SendMessage", btnSendMessage_Click);
         btnSendUser = NewButton("SendMessageToUser", btnSendUser_Click);
-        buttonPanel.Controls.AddRange(new Control[] { btnSendMessage, btnSendUser });
+        btnGetOnlineUsers = NewButton("GetOnlineUsers", btnGetOnlineUsers_Click);
+        btnSendUsers = NewButton("发送给勾选用户", btnSendUsers_Click);
+        buttonPanel.Controls.AddRange(new Control[] { btnSendMessage, btnSendUser, btnGetOnlineUsers, btnSendUsers });
         panel.Controls.Add(buttonPanel);
+
+        lstOnlineUsers = new ListBox
+        {
+            Width = 260,
+            Height = 160,
+            SelectionMode = SelectionMode.MultiExtended
+        };
+        panel.Controls.Add(lstOnlineUsers);
 
         box.Controls.Add(panel);
         return box;
@@ -229,6 +251,31 @@ public sealed class MainForm : Form
         }
     }
 
+    private async void btnLogin_Click(object? sender, EventArgs e)
+    {
+        try
+        {
+            btnLogin.Enabled = false;
+            var loginResult = await AuthenticateAsync(
+                txtHubUrl.Text.Trim(),
+                txtLoginUserName.Text.Trim(),
+                txtLoginPassword.Text);
+
+            txtEncToken.Text = loginResult.EncryptedAccessToken;
+            txtUserId.Text = loginResult.UserId.ToString();
+            AppendLog($"登录成功，Token 有效秒数: {loginResult.ExpireInSeconds}");
+        }
+        catch (Exception ex)
+        {
+            AppendLog("登录失败: " + ex);
+            MessageBox.Show(this, ex.Message, "登录失败", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        finally
+        {
+            btnLogin.Enabled = true;
+        }
+    }
+
     private async void btnDisconnect_Click(object? sender, EventArgs e)
     {
         try
@@ -254,6 +301,52 @@ public sealed class MainForm : Form
     private async void btnSendUser_Click(object? sender, EventArgs e)
     {
         await InvokeWithResult(async () => await _chatClient.SendMessageToUserAsync(BuildSendChatMessageInput()), "SendMessageToUser");
+    }
+
+    private async void btnGetOnlineUsers_Click(object? sender, EventArgs e)
+    {
+        try
+        {
+            var users = await _chatClient.GetOnlineUsersAsync();
+            lstOnlineUsers.Items.Clear();
+            foreach (var user in users.Where(u => u.UserId.HasValue))
+            {
+                lstOnlineUsers.Items.Add(new OnlineUserListItem(user));
+            }
+
+            AppendLog($"GetOnlineUsers 成功，在线用户数: {users.Count}");
+        }
+        catch (Exception ex)
+        {
+            AppendLog("GetOnlineUsers 异常: " + ex);
+            MessageBox.Show(this, ex.Message, "GetOnlineUsers", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private async void btnSendUsers_Click(object? sender, EventArgs e)
+    {
+        try
+        {
+            var selected = lstOnlineUsers.SelectedItems.Cast<OnlineUserListItem>().ToList();
+            if (selected.Count == 0)
+            {
+                throw new InvalidOperationException("请先在在线用户列表里选择至少 1 个用户");
+            }
+
+            foreach (var user in selected)
+            {
+                var input = BuildSendChatMessageInput();
+                input.UserId = user.UserId;
+                await _chatClient.SendMessageToUserAsync(input);
+            }
+
+            AppendLog($"已向 {selected.Count} 个在线用户发送消息");
+        }
+        catch (Exception ex)
+        {
+            AppendLog("发送给勾选用户 异常: " + ex);
+            MessageBox.Show(this, ex.Message, "发送给勾选用户", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 
     private async void btnJoinGroup_Click(object? sender, EventArgs e)
@@ -370,5 +463,66 @@ public sealed class MainForm : Form
         }
 
         txtLog.AppendText($"[{DateTime.Now:HH:mm:ss}] {message}{Environment.NewLine}");
+    }
+
+    private static async Task<LoginResult> AuthenticateAsync(string hubUrl, string username, string password)
+    {
+        if (string.IsNullOrWhiteSpace(hubUrl))
+        {
+            throw new InvalidOperationException("HubUrl 不能为空");
+        }
+
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            throw new InvalidOperationException("Login UserName 不能为空");
+        }
+
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            throw new InvalidOperationException("Login Password 不能为空");
+        }
+
+        var hubUri = new Uri(hubUrl);
+        var apiBase = $"{hubUri.Scheme}://{hubUri.Authority}";
+        var authUrl = $"{apiBase}/api/TokenAuth/Authenticate";
+
+        using var http = new HttpClient();
+        var response = await http.PostAsJsonAsync(authUrl, new LoginRequest
+        {
+            UserName = username,
+            Password = password
+        });
+        response.EnsureSuccessStatusCode();
+
+        var json = await response.Content.ReadAsStringAsync();
+        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        var apiResult = JsonSerializer.Deserialize<ApiResponse<LoginResult>>(json, options)
+                        ?? throw new InvalidOperationException("登录接口返回为空");
+
+        if (!apiResult.Success || apiResult.Result is null)
+        {
+            throw new InvalidOperationException("登录接口返回失败: " + json);
+        }
+
+        return apiResult.Result;
+    }
+
+    private sealed class OnlineUserListItem
+    {
+        public Guid UserId { get; }
+        public string UserName { get; }
+        public string TenancyName { get; }
+
+        public OnlineUserListItem(OnlineUserDto user)
+        {
+            UserId = user.UserId ?? Guid.Empty;
+            UserName = user.UserName;
+            TenancyName = user.TenancyName;
+        }
+
+        public override string ToString()
+        {
+            return $"{UserName} ({UserId}) [{TenancyName}]";
+        }
     }
 }
