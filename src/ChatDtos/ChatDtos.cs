@@ -113,4 +113,5 @@ public sealed class OnlineUserDto
     public string UserName { get; set; } = "";
     public Guid? TenantId { get; set; }
     public string TenancyName { get; set; } = "";
+    public string ConnectionId { get; set; } = "";
 }

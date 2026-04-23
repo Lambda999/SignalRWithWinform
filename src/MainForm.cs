@@ -23,6 +23,7 @@ public partial class MainForm : Form
         _chatClient.OnSystemMessage += dto => AppendLog($"[系统消息事件][{dto.Level}] {dto.Title}: {dto.Message}");
 
         LoadSettings();
+        SyncHubUrlFromApiBase();
     }
 
     private void LoadSettings()
@@ -42,6 +43,7 @@ public partial class MainForm : Form
             }
 
             txtHubUrl.Text = cfg.Client.HubUrl;
+            txtApiBaseUrl.Text = cfg.Client.ApiBaseUrl;
             txtEncToken.Text = cfg.Client.EncAuthToken;
             txtTenantId.Text = cfg.Client.TenantId;
             txtUserId.Text = cfg.Client.TargetUserId;
@@ -53,6 +55,7 @@ public partial class MainForm : Form
             txtSystemTitle.Text = cfg.Client.SystemTitle;
             txtMessage.Text = cfg.Client.Message;
             _accessToken = cfg.Client.AccessToken;
+            SyncHubUrlFromApiBase();
         }
         catch (Exception ex)
         {
@@ -69,6 +72,7 @@ public partial class MainForm : Form
                 Client = new ClientSettings
                 {
                     HubUrl = txtHubUrl.Text.Trim(),
+                    ApiBaseUrl = txtApiBaseUrl.Text.Trim(),
                     EncAuthToken = txtEncToken.Text.Trim(),
                     TenantId = txtTenantId.Text.Trim(),
                     TargetUserId = txtUserId.Text.Trim(),
@@ -98,7 +102,7 @@ public partial class MainForm : Form
         {
             btnLogin.Enabled = false;
             var loginResult = await AuthenticateAsync(
-                txtHubUrl.Text.Trim(),
+                txtApiBaseUrl.Text.Trim(),
                 txtLoginUserName.Text.Trim(),
                 txtLoginPassword.Text);
 
@@ -123,6 +127,7 @@ public partial class MainForm : Form
         try
         {
             btnConnect.Enabled = false;
+            SyncHubUrlFromApiBase();
             await _chatClient.ConnectAsync(txtHubUrl.Text.Trim(), txtEncToken.Text.Trim());
             AppendLog("连接成功");
         }
@@ -217,7 +222,7 @@ public partial class MainForm : Form
             AppendLog($"GetMyOnlineFriends 成功，在线好友数: {friends.Count}");
             foreach (var friend in friends.Take(20))
             {
-                AppendLog($"  - {friend.UserName} ({friend.UserId})");
+                AppendLog($"  - {friend.UserName} ({friend.UserId}) | {friend.ConnectionId}");
             }
         }
         catch (Exception ex)
@@ -384,11 +389,11 @@ public partial class MainForm : Form
         txtLog.AppendText($"[{DateTime.Now:HH:mm:ss}] {message}{Environment.NewLine}");
     }
 
-    private static async Task<LoginResult> AuthenticateAsync(string hubUrl, string username, string password)
+    private static async Task<LoginResult> AuthenticateAsync(string apiBaseUrl, string username, string password)
     {
-        if (string.IsNullOrWhiteSpace(hubUrl))
+        if (string.IsNullOrWhiteSpace(apiBaseUrl))
         {
-            throw new InvalidOperationException("HubUrl 不能为空");
+            throw new InvalidOperationException("Api Base Url 不能为空");
         }
 
         if (string.IsNullOrWhiteSpace(username))
@@ -401,9 +406,8 @@ public partial class MainForm : Form
             throw new InvalidOperationException("Login Password 不能为空");
         }
 
-        var hubUri = new Uri(hubUrl);
-        var apiBase = $"{hubUri.Scheme}://{hubUri.Authority}";
-        var authUrl = $"{apiBase}/api/TokenAuth/Authenticate";
+        var normalizedBaseUrl = NormalizeApiBaseUrl(apiBaseUrl);
+        var authUrl = $"{normalizedBaseUrl}api/TokenAuth/Authenticate";
 
         using var http = new HttpClient();
         var response = await http.PostAsJsonAsync(authUrl, new LoginRequest
@@ -456,8 +460,8 @@ public partial class MainForm : Form
             throw new InvalidOperationException("请先登录，获取 accessToken 后再调用 API");
         }
 
-        var hubUri = new Uri(txtHubUrl.Text.Trim());
-        var apiUrl = $"{hubUri.Scheme}://{hubUri.Authority}{path}";
+        var normalizedBaseUrl = NormalizeApiBaseUrl(txtApiBaseUrl.Text.Trim());
+        var apiUrl = $"{normalizedBaseUrl}{path.TrimStart('/')}";
 
         using var request = new HttpRequestMessage(HttpMethod.Post, apiUrl);
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _accessToken);
@@ -478,15 +482,57 @@ public partial class MainForm : Form
         return apiResult.Result;
     }
 
+    private void txtApiBaseUrl_TextChanged(object? sender, EventArgs e)
+    {
+        SyncHubUrlFromApiBase();
+    }
+
+    private void SyncHubUrlFromApiBase()
+    {
+        txtHubUrl.Text = BuildHubUrlFromApiBase(txtApiBaseUrl.Text);
+    }
+
+    private static string BuildHubUrlFromApiBase(string apiBaseUrl)
+    {
+        return NormalizeApiBaseUrl(apiBaseUrl) + "signalr-chat";
+    }
+
+    private static string NormalizeApiBaseUrl(string apiBaseUrl)
+    {
+        var trimmed = (apiBaseUrl ?? "").Trim();
+        if (string.IsNullOrWhiteSpace(trimmed))
+        {
+            throw new InvalidOperationException("Api Base Url 不能为空");
+        }
+
+        if (!trimmed.EndsWith('/'))
+        {
+            trimmed += "/";
+        }
+
+        return trimmed;
+    }
+
     private static List<OnlineUserDto> ParseOnlineUsers(JsonElement result)
     {
         var users = new List<OnlineUserDto>();
-        if (result.ValueKind != JsonValueKind.Array)
+        JsonElement sourceArray;
+        if (result.ValueKind == JsonValueKind.Array)
+        {
+            sourceArray = result;
+        }
+        else if (result.ValueKind == JsonValueKind.Object &&
+                 (result.TryGetProperty("items", out var items) || result.TryGetProperty("Items", out items)) &&
+                 items.ValueKind == JsonValueKind.Array)
+        {
+            sourceArray = items;
+        }
+        else
         {
             return users;
         }
 
-        foreach (var item in result.EnumerateArray())
+        foreach (var item in sourceArray.EnumerateArray())
         {
             if (item.ValueKind != JsonValueKind.Object)
             {
@@ -498,7 +544,8 @@ public partial class MainForm : Form
                 UserId = TryGetGuid(item, "userId"),
                 UserName = TryGetString(item, "userName", "friendUserName", "name"),
                 TenantId = TryGetGuid(item, "tenantId"),
-                TenancyName = TryGetString(item, "tenancyName", "tenantName")
+                TenancyName = TryGetString(item, "tenancyName", "tenantName"),
+                ConnectionId = TryGetString(item, "connectionId")
             };
             users.Add(dto);
         }
@@ -561,17 +608,19 @@ public partial class MainForm : Form
         public Guid UserId { get; }
         public string UserName { get; }
         public string TenancyName { get; }
+        public string ConnectionId { get; }
 
         public OnlineUserListItem(OnlineUserDto user)
         {
             UserId = user.UserId ?? Guid.Empty;
             UserName = user.UserName;
             TenancyName = user.TenancyName;
+            ConnectionId = user.ConnectionId;
         }
 
         public override string ToString()
         {
-            return $"{UserName} ({UserId}) [{TenancyName}]";
+            return $"{UserName} ({UserId}) [{TenancyName}] | {ConnectionId}";
         }
     }
 }
@@ -584,6 +633,7 @@ public sealed class AppSettings
 public sealed class ClientSettings
 {
     public string HubUrl { get; set; } = "";
+    public string ApiBaseUrl { get; set; } = "http://localhost:44380/";
     public string EncAuthToken { get; set; } = "";
     public string TenantId { get; set; } = "";
     public string TargetUserId { get; set; } = "";

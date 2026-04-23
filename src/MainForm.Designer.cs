@@ -12,6 +12,7 @@ partial class MainForm
 
     private Label lblLoginUserName = null!;
     private Label lblLoginPassword = null!;
+    private Label lblApiBaseUrl = null!;
     private Label lblHubUrl = null!;
     private Label lblEncToken = null!;
     private Label lblTenantId = null!;
@@ -30,6 +31,7 @@ partial class MainForm
     private TextBox txtTenancyName = null!;
     private TextBox txtLoginUserName = null!;
     private TextBox txtLoginPassword = null!;
+    private TextBox txtApiBaseUrl = null!;
     private TextBox txtGroupName = null!;
     private TextBox txtSystemTitle = null!;
     private TextBox txtMessage = null!;
@@ -74,6 +76,7 @@ partial class MainForm
 
         lblLoginUserName = new Label();
         lblLoginPassword = new Label();
+        lblApiBaseUrl = new Label();
         lblHubUrl = new Label();
         lblEncToken = new Label();
         lblTenantId = new Label();
@@ -86,6 +89,7 @@ partial class MainForm
 
         txtLoginUserName = new TextBox();
         txtLoginPassword = new TextBox();
+        txtApiBaseUrl = new TextBox();
         txtHubUrl = new TextBox();
         txtEncToken = new TextBox();
         txtTenantId = new TextBox();
@@ -127,25 +131,36 @@ partial class MainForm
         grpLogin.Size = new Size(320, 440);
 
         lblLoginUserName.AutoSize = true;
-        lblLoginUserName.Location = new Point(12, 30);
+        lblLoginUserName.Location = new Point(12, 86);
         lblLoginUserName.Text = "UserName";
 
-        txtLoginUserName.Location = new Point(12, 50);
+        txtLoginUserName.Location = new Point(12, 106);
         txtLoginUserName.Size = new Size(300, 23);
 
+        lblApiBaseUrl.AutoSize = true;
+        lblApiBaseUrl.Location = new Point(12, 30);
+        lblApiBaseUrl.Text = "Api Base Url";
+
+        txtApiBaseUrl.Location = new Point(12, 50);
+        txtApiBaseUrl.Size = new Size(300, 23);
+        txtApiBaseUrl.Text = "http://localhost:44380/";
+        txtApiBaseUrl.TextChanged += txtApiBaseUrl_TextChanged;
+
         lblLoginPassword.AutoSize = true;
-        lblLoginPassword.Location = new Point(12, 88);
+        lblLoginPassword.Location = new Point(12, 144);
         lblLoginPassword.Text = "Password";
 
-        txtLoginPassword.Location = new Point(12, 108);
+        txtLoginPassword.Location = new Point(12, 164);
         txtLoginPassword.Size = new Size(300, 23);
         txtLoginPassword.UseSystemPasswordChar = true;
 
-        btnLogin.Location = new Point(12, 150);
+        btnLogin.Location = new Point(12, 206);
         btnLogin.Size = new Size(120, 30);
         btnLogin.Text = "登录";
         btnLogin.Click += btnLogin_Click;
 
+        grpLogin.Controls.Add(lblApiBaseUrl);
+        grpLogin.Controls.Add(txtApiBaseUrl);
         grpLogin.Controls.Add(lblLoginUserName);
         grpLogin.Controls.Add(txtLoginUserName);
         grpLogin.Controls.Add(lblLoginPassword);
@@ -162,7 +177,7 @@ partial class MainForm
         lblHubUrl.Text = "HubUrl";
         txtHubUrl.Location = new Point(12, 50);
         txtHubUrl.Size = new Size(300, 23);
-        txtHubUrl.Text = "http://dcloud-api.adtogroup.com:20980/signalr-chat";
+        txtHubUrl.ReadOnly = true;
 
         lblEncToken.AutoSize = true;
         lblEncToken.Location = new Point(12, 88);
