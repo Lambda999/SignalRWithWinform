@@ -4,8 +4,6 @@ partial class MainForm
 {
     private System.ComponentModel.IContainer? components = null;
 
-    private TableLayoutPanel rootLayout = null!;
-    private TableLayoutPanel topLayout = null!;
     private GroupBox grpLogin = null!;
     private GroupBox grpConnection = null!;
     private GroupBox grpSingle = null!;
@@ -65,8 +63,6 @@ partial class MainForm
     private void InitializeComponent()
     {
         components = new System.ComponentModel.Container();
-        rootLayout = new TableLayoutPanel();
-        topLayout = new TableLayoutPanel();
 
         grpLogin = new GroupBox();
         grpConnection = new GroupBox();
@@ -116,48 +112,29 @@ partial class MainForm
 
         SuspendLayout();
 
-        rootLayout.Dock = DockStyle.Fill;
-        rootLayout.ColumnCount = 1;
-        rootLayout.RowCount = 2;
-        rootLayout.Padding = new Padding(10);
-        rootLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        rootLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-
-        topLayout.Dock = DockStyle.Top;
-        topLayout.AutoSize = true;
-        topLayout.ColumnCount = 5;
-        topLayout.RowCount = 1;
-        for (var i = 0; i < 5; i++)
-        {
-            topLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20F));
-        }
-
         ConfigureLoginGroup();
         ConfigureConnectionGroup();
         ConfigureSingleGroup();
         ConfigureGroupGroup();
         ConfigureBroadcastGroup();
 
-        topLayout.Controls.Add(grpLogin, 0, 0);
-        topLayout.Controls.Add(grpConnection, 1, 0);
-        topLayout.Controls.Add(grpSingle, 2, 0);
-        topLayout.Controls.Add(grpGroup, 3, 0);
-        topLayout.Controls.Add(grpBroadcast, 4, 0);
-
-        txtLog.Dock = DockStyle.Fill;
+        txtLog.Location = new Point(10, 460);
+        txtLog.Size = new Size(1660, 430);
         txtLog.Multiline = true;
         txtLog.ScrollBars = ScrollBars.Both;
         txtLog.ReadOnly = true;
         txtLog.Font = new Font("Consolas", 10F);
         txtLog.WordWrap = false;
 
-        rootLayout.Controls.Add(topLayout, 0, 0);
-        rootLayout.Controls.Add(txtLog, 0, 1);
-
         AutoScaleDimensions = new SizeF(7F, 17F);
         AutoScaleMode = AutoScaleMode.Font;
         ClientSize = new Size(1680, 900);
-        Controls.Add(rootLayout);
+        Controls.Add(grpLogin);
+        Controls.Add(grpConnection);
+        Controls.Add(grpSingle);
+        Controls.Add(grpGroup);
+        Controls.Add(grpBroadcast);
+        Controls.Add(txtLog);
         StartPosition = FormStartPosition.CenterScreen;
         Text = ".NET 8 WinForms SignalR Demo";
 
@@ -167,7 +144,8 @@ partial class MainForm
     private void ConfigureLoginGroup()
     {
         grpLogin.Text = "登录";
-        grpLogin.Dock = DockStyle.Fill;
+        grpLogin.Location = new Point(10, 10);
+        grpLogin.Size = new Size(320, 440);
 
         lblLoginUserName.Text = "UserName";
         lblLoginUserName.Location = new Point(12, 30);
@@ -200,7 +178,8 @@ partial class MainForm
     private void ConfigureConnectionGroup()
     {
         grpConnection.Text = "连接";
-        grpConnection.Dock = DockStyle.Fill;
+        grpConnection.Location = new Point(340, 10);
+        grpConnection.Size = new Size(320, 440);
 
         lblHubUrl.Text = "HubUrl";
         lblHubUrl.Location = new Point(12, 30);
@@ -271,7 +250,8 @@ partial class MainForm
     private void ConfigureSingleGroup()
     {
         grpSingle.Text = "单聊";
-        grpSingle.Dock = DockStyle.Fill;
+        grpSingle.Location = new Point(670, 10);
+        grpSingle.Size = new Size(320, 440);
 
         lblMessage.Text = "Message";
         lblMessage.Location = new Point(12, 30);
@@ -319,7 +299,8 @@ partial class MainForm
     private void ConfigureGroupGroup()
     {
         grpGroup.Text = "群组";
-        grpGroup.Dock = DockStyle.Fill;
+        grpGroup.Location = new Point(1000, 10);
+        grpGroup.Size = new Size(320, 440);
 
         lblGroupName.Text = "GroupName";
         lblGroupName.Location = new Point(12, 30);
@@ -354,7 +335,8 @@ partial class MainForm
     private void ConfigureBroadcastGroup()
     {
         grpBroadcast.Text = "广播 / 系统消息";
-        grpBroadcast.Dock = DockStyle.Fill;
+        grpBroadcast.Location = new Point(1330, 10);
+        grpBroadcast.Size = new Size(340, 440);
 
         lblSystemTitle.Text = "System Title";
         lblSystemTitle.Location = new Point(12, 30);
