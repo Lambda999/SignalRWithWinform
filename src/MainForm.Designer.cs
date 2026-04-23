@@ -25,6 +25,7 @@ partial class MainForm
     private Label lblSystemTitle = null!;
     private Label lblFriendTenancyName = null!;
     private Label lblFriendUserName = null!;
+    private Label lblFriendList = null!;
 
     private TextBox txtHubUrl = null!;
     private TextBox txtEncToken = null!;
@@ -65,6 +66,7 @@ partial class MainForm
     private Button btnAcceptFriendshipRequest = null!;
     private Button btnRemoveFriend = null!;
     private ListBox lstOnlineUsers = null!;
+    private ListBox lstFriendUsers = null!;
 
     protected override void Dispose(bool disposing)
     {
@@ -101,6 +103,7 @@ partial class MainForm
         lblSystemTitle = new Label();
         lblFriendTenancyName = new Label();
         lblFriendUserName = new Label();
+        lblFriendList = new Label();
 
         txtLoginUserName = new TextBox();
         txtLoginPassword = new TextBox();
@@ -141,6 +144,7 @@ partial class MainForm
         btnAcceptFriendshipRequest = new Button();
         btnRemoveFriend = new Button();
         lstOnlineUsers = new ListBox();
+        lstFriendUsers = new ListBox();
 
         SuspendLayout();
         grpLogin.SuspendLayout();
@@ -391,7 +395,7 @@ partial class MainForm
         // grpFriendship
         grpFriendship.Text = "好友管理服务 (Friendship)";
         grpFriendship.Location = new Point(1330, 460);
-        grpFriendship.Size = new Size(340, 440);
+        grpFriendship.Size = new Size(340, 470);
 
         lblFriendTenancyName.AutoSize = true;
         lblFriendTenancyName.Location = new Point(12, 30);
@@ -408,37 +412,45 @@ partial class MainForm
         txtFriendUserName.Location = new Point(12, 100);
         txtFriendUserName.Size = new Size(300, 23);
 
-        btnCreateFriendshipRequest.Location = new Point(12, 135);
+        lblFriendList.AutoSize = true;
+        lblFriendList.Location = new Point(12, 128);
+        lblFriendList.Text = "好友列表（选择后用于 CreateFriendshipRequest）";
+
+        lstFriendUsers.Location = new Point(12, 148);
+        lstFriendUsers.Size = new Size(300, 94);
+        lstFriendUsers.SelectionMode = SelectionMode.One;
+
+        btnCreateFriendshipRequest.Location = new Point(12, 249);
         btnCreateFriendshipRequest.Size = new Size(300, 30);
         btnCreateFriendshipRequest.Text = "CreateFriendshipRequest";
         btnCreateFriendshipRequest.Click += btnCreateFriendshipRequest_Click;
 
-        btnCreateFriendshipWithDifferentTenant.Location = new Point(12, 171);
+        btnCreateFriendshipWithDifferentTenant.Location = new Point(12, 285);
         btnCreateFriendshipWithDifferentTenant.Size = new Size(300, 30);
         btnCreateFriendshipWithDifferentTenant.Text = "CreateFriendshipWithDifferentTenant";
         btnCreateFriendshipWithDifferentTenant.Click += btnCreateFriendshipWithDifferentTenant_Click;
 
-        btnCreateFriendshipForCurrentTenant.Location = new Point(12, 207);
+        btnCreateFriendshipForCurrentTenant.Location = new Point(12, 321);
         btnCreateFriendshipForCurrentTenant.Size = new Size(300, 30);
         btnCreateFriendshipForCurrentTenant.Text = "CreateFriendshipForCurrentTenant";
         btnCreateFriendshipForCurrentTenant.Click += btnCreateFriendshipForCurrentTenant_Click;
 
-        btnBlockUser.Location = new Point(12, 243);
+        btnBlockUser.Location = new Point(12, 357);
         btnBlockUser.Size = new Size(145, 30);
         btnBlockUser.Text = "BlockUser";
         btnBlockUser.Click += btnBlockUser_Click;
 
-        btnUnblockUser.Location = new Point(167, 243);
+        btnUnblockUser.Location = new Point(167, 357);
         btnUnblockUser.Size = new Size(145, 30);
         btnUnblockUser.Text = "UnblockUser";
         btnUnblockUser.Click += btnUnblockUser_Click;
 
-        btnAcceptFriendshipRequest.Location = new Point(12, 279);
+        btnAcceptFriendshipRequest.Location = new Point(12, 393);
         btnAcceptFriendshipRequest.Size = new Size(300, 30);
         btnAcceptFriendshipRequest.Text = "AcceptFriendshipRequest";
         btnAcceptFriendshipRequest.Click += btnAcceptFriendshipRequest_Click;
 
-        btnRemoveFriend.Location = new Point(12, 315);
+        btnRemoveFriend.Location = new Point(12, 429);
         btnRemoveFriend.Size = new Size(300, 30);
         btnRemoveFriend.Text = "RemoveFriend";
         btnRemoveFriend.Click += btnRemoveFriend_Click;
@@ -447,6 +459,8 @@ partial class MainForm
         grpFriendship.Controls.Add(txtFriendTenancyName);
         grpFriendship.Controls.Add(lblFriendUserName);
         grpFriendship.Controls.Add(txtFriendUserName);
+        grpFriendship.Controls.Add(lblFriendList);
+        grpFriendship.Controls.Add(lstFriendUsers);
         grpFriendship.Controls.Add(btnCreateFriendshipRequest);
         grpFriendship.Controls.Add(btnCreateFriendshipWithDifferentTenant);
         grpFriendship.Controls.Add(btnCreateFriendshipForCurrentTenant);
@@ -456,7 +470,7 @@ partial class MainForm
         grpFriendship.Controls.Add(btnRemoveFriend);
 
         // log
-        txtLog.Location = new Point(10, 910);
+        txtLog.Location = new Point(10, 940);
         txtLog.Size = new Size(1660, 75);
         txtLog.Multiline = true;
         txtLog.ScrollBars = ScrollBars.Both;
@@ -467,7 +481,7 @@ partial class MainForm
         // Form
         AutoScaleDimensions = new SizeF(7F, 17F);
         AutoScaleMode = AutoScaleMode.Font;
-        ClientSize = new Size(1680, 995);
+        ClientSize = new Size(1680, 1025);
         Controls.Add(grpLogin);
         Controls.Add(grpConnection);
         Controls.Add(grpSingle);

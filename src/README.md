@@ -27,6 +27,7 @@
   - `/api/services/app/Friendship/UnblockUser`
   - `/api/services/app/Friendship/AcceptFriendshipRequest`
   - `/api/services/app/Friendship/RemoveFriend`
+  - `CreateFriendshipRequest` 会使用“好友列表”中当前选中记录的 `tenantId/userId` 作为参数
 - 接收事件：
   - `ReceiveMessage`
   - `ReceiveGroupMessage`

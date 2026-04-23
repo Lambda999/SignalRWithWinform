@@ -225,6 +225,11 @@ public partial class MainForm : Form
         try
         {
             var friends = await GetMyOnlineFriendsByApiAsync();
+            lstFriendUsers.Items.Clear();
+            foreach (var friend in friends.Where(u => u.UserId.HasValue))
+            {
+                lstFriendUsers.Items.Add(new OnlineUserListItem(friend));
+            }
             AppendLog($"GetMyOnlineFriends 成功，在线好友数: {friends.Count}");
             foreach (var friend in friends.Take(20))
             {
@@ -255,10 +260,11 @@ public partial class MainForm : Form
 
     private async void btnCreateFriendshipRequest_Click(object? sender, EventArgs e)
     {
+        var selectedFriend = GetSelectedFriendFromList();
         await InvokeFriendshipApi("CreateFriendshipRequest", new
         {
-            tenantId = ParseNullableGuid(txtTenantId.Text),
-            userId = ParseRequiredGuid(txtUserId.Text, "Target UserId")
+            tenantId = selectedFriend.TenantId,
+            userId = selectedFriend.UserId
         });
     }
 
@@ -565,6 +571,25 @@ public partial class MainForm : Form
         };
     }
 
+    private OnlineUserListItem GetSelectedFriendFromList()
+    {
+        if (lstFriendUsers.SelectedItem is not OnlineUserListItem selectedFriend)
+        {
+            throw new InvalidOperationException("请先在好友列表中选择一条记录，再调用 CreateFriendshipRequest");
+        }
+
+        if (selectedFriend.UserId == Guid.Empty)
+        {
+            throw new InvalidOperationException("所选好友记录缺少有效 UserId");
+        }
+
+        txtTenantId.Text = selectedFriend.TenantId?.ToString() ?? "";
+        txtUserId.Text = selectedFriend.UserId.ToString();
+        txtFriendTenancyName.Text = selectedFriend.TenancyName;
+        txtFriendUserName.Text = selectedFriend.UserName;
+        return selectedFriend;
+    }
+
     private void txtApiBaseUrl_TextChanged(object? sender, EventArgs e)
     {
         SyncHubUrlFromApiBase();
@@ -723,6 +748,7 @@ public partial class MainForm : Form
     private sealed class OnlineUserListItem
     {
         public Guid UserId { get; }
+        public Guid? TenantId { get; }
         public string UserName { get; }
         public string TenancyName { get; }
         public string ConnectionId { get; }
@@ -730,6 +756,7 @@ public partial class MainForm : Form
         public OnlineUserListItem(OnlineUserDto user)
         {
             UserId = user.UserId ?? Guid.Empty;
+            TenantId = user.TenantId;
             UserName = user.UserName;
             TenancyName = user.TenancyName;
             ConnectionId = user.ConnectionId;
