@@ -23,12 +23,14 @@
   - `/api/services/app/Friendship/CreateFriendshipRequest`
   - `/api/services/app/Friendship/CreateFriendshipWithDifferentTenant`
   - `/api/services/app/Friendship/CreateFriendshipForCurrentTenant`
+  - `/api/services/app/Friendship/GetAllFriendships`
   - `/api/services/app/Friendship/BlockUser`
   - `/api/services/app/Friendship/UnblockUser`
   - `/api/services/app/Friendship/AcceptFriendshipRequest`
   - `/api/services/app/Friendship/RemoveFriend`
   - Friendship 分组新增 `Target UserId` 文本框（可手动修改）
   - 两个列表（在线用户/好友）选中后都会把 `UserId` 回填到该文本框
+  - `GetAllFriendships` 会加载“我的全部好友”到好友列表
   - `CreateFriendshipRequest` 与 `Block/Unblock/Accept/Remove` 的目标 `userId` 均来自该文本框
 - 接收事件：
   - `ReceiveMessage`

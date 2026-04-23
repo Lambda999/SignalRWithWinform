@@ -307,6 +307,26 @@ public partial class MainForm : Form
         await InvokeFriendshipApi("RemoveFriend", BuildFriendIdentityInput());
     }
 
+    private async void btnGetAllFriendships_Click(object? sender, EventArgs e)
+    {
+        try
+        {
+            var friends = await GetAllFriendshipsByApiAsync();
+            lstFriendUsers.Items.Clear();
+            foreach (var friend in friends.Where(u => u.UserId.HasValue))
+            {
+                lstFriendUsers.Items.Add(new OnlineUserListItem(friend));
+            }
+
+            AppendLog($"GetAllFriendships 成功，好友总数: {friends.Count}");
+        }
+        catch (Exception ex)
+        {
+            AppendLog("GetAllFriendships 异常: " + ex);
+            MessageBox.Show(this, ex.Message, "GetAllFriendships", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
     private async void btnSendUsers_Click(object? sender, EventArgs e)
     {
         try
@@ -513,6 +533,12 @@ public partial class MainForm : Form
         };
     }
 
+    private async Task<List<OnlineUserDto>> GetAllFriendshipsByApiAsync()
+    {
+        var result = await PostApiAsync<JsonElement>("/api/services/app/Friendship/GetAllFriendships", null);
+        return ParseOnlineUsers(result);
+    }
+
     private async Task<T> PostApiAsync<T>(string path, object? payload)
     {
         if (string.IsNullOrWhiteSpace(_accessToken))
@@ -672,10 +698,10 @@ public partial class MainForm : Form
 
             var dto = new OnlineUserDto
             {
-                UserId = TryGetGuid(item, "userId"),
+                UserId = TryGetGuid(item, "userId", "friendUserId"),
                 UserName = TryGetString(item, "userName", "friendUserName", "name"),
-                TenantId = TryGetGuid(item, "tenantId"),
-                TenancyName = TryGetString(item, "tenancyName", "tenantName"),
+                TenantId = TryGetGuid(item, "tenantId", "friendTenantId"),
+                TenancyName = TryGetString(item, "tenancyName", "tenantName", "friendTenancyName"),
                 ConnectionId = TryGetString(item, "connectionId")
             };
             users.Add(dto);
