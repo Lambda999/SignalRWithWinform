@@ -1,6 +1,8 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using WinFormsSignalRDemo.ChatDtos;
+using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace WinFormsSignalRDemo;
 
@@ -156,6 +158,31 @@ public partial class MainForm : Form
         finally
         {
             btnConnect.Enabled = true;
+        }
+    }
+
+    private async void btnLogin_Click(object? sender, EventArgs e)
+    {
+        try
+        {
+            btnLogin.Enabled = false;
+            var loginResult = await AuthenticateAsync(
+                txtHubUrl.Text.Trim(),
+                txtLoginUserName.Text.Trim(),
+                txtLoginPassword.Text);
+
+            txtEncToken.Text = loginResult.EncryptedAccessToken;
+            txtUserId.Text = loginResult.UserId.ToString();
+            AppendLog($"登录成功，Token 有效秒数: {loginResult.ExpireInSeconds}");
+        }
+        catch (Exception ex)
+        {
+            AppendLog("登录失败: " + ex);
+            MessageBox.Show(this, ex.Message, "登录失败", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        finally
+        {
+            btnLogin.Enabled = true;
         }
     }
 
