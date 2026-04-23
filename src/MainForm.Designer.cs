@@ -26,6 +26,8 @@ partial class MainForm
     private Label lblFriendTenancyName = null!;
     private Label lblFriendUserName = null!;
     private Label lblFriendList = null!;
+    private Label lblOnlineUsers = null!;
+    private Label lblFriendTargetUserId = null!;
 
     private TextBox txtHubUrl = null!;
     private TextBox txtEncToken = null!;
@@ -40,6 +42,7 @@ partial class MainForm
     private TextBox txtSystemTitle = null!;
     private TextBox txtFriendTenancyName = null!;
     private TextBox txtFriendUserName = null!;
+    private TextBox txtFriendTargetUserId = null!;
     private TextBox txtMessage = null!;
     private TextBox txtLog = null!;
 
@@ -104,6 +107,8 @@ partial class MainForm
         lblFriendTenancyName = new Label();
         lblFriendUserName = new Label();
         lblFriendList = new Label();
+        lblOnlineUsers = new Label();
+        lblFriendTargetUserId = new Label();
 
         txtLoginUserName = new TextBox();
         txtLoginPassword = new TextBox();
@@ -119,6 +124,7 @@ partial class MainForm
         txtSystemTitle = new TextBox();
         txtFriendTenancyName = new TextBox();
         txtFriendUserName = new TextBox();
+        txtFriendTargetUserId = new TextBox();
         txtLog = new TextBox();
 
         btnLogin = new Button();
@@ -316,9 +322,14 @@ partial class MainForm
         btnIsUserOnline.Text = "IsUserOnline";
         btnIsUserOnline.Click += btnIsUserOnline_Click;
 
+        lblOnlineUsers.AutoSize = true;
+        lblOnlineUsers.Location = new Point(12, 294);
+        lblOnlineUsers.Text = "所有在线用户列表";
+
         lstOnlineUsers.Location = new Point(12, 310);
         lstOnlineUsers.Size = new Size(300, 115);
         lstOnlineUsers.SelectionMode = SelectionMode.MultiExtended;
+        lstOnlineUsers.SelectedIndexChanged += lstOnlineUsers_SelectedIndexChanged;
 
         grpSingle.Controls.Add(lblMessage);
         grpSingle.Controls.Add(txtMessage);
@@ -328,6 +339,7 @@ partial class MainForm
         grpSingle.Controls.Add(btnSendUsers);
         grpSingle.Controls.Add(btnGetMyOnlineFriends);
         grpSingle.Controls.Add(btnIsUserOnline);
+        grpSingle.Controls.Add(lblOnlineUsers);
         grpSingle.Controls.Add(lstOnlineUsers);
 
         // grpGroup
@@ -395,7 +407,7 @@ partial class MainForm
         // grpFriendship
         grpFriendship.Text = "好友管理服务 (Friendship)";
         grpFriendship.Location = new Point(1330, 460);
-        grpFriendship.Size = new Size(340, 470);
+        grpFriendship.Size = new Size(340, 520);
 
         lblFriendTenancyName.AutoSize = true;
         lblFriendTenancyName.Location = new Point(12, 30);
@@ -412,45 +424,53 @@ partial class MainForm
         txtFriendUserName.Location = new Point(12, 100);
         txtFriendUserName.Size = new Size(300, 23);
 
-        lblFriendList.AutoSize = true;
-        lblFriendList.Location = new Point(12, 128);
-        lblFriendList.Text = "好友列表（选择后用于 CreateFriendshipRequest）";
+        lblFriendTargetUserId.AutoSize = true;
+        lblFriendTargetUserId.Location = new Point(12, 128);
+        lblFriendTargetUserId.Text = "Target UserId（可手动修改）";
 
-        lstFriendUsers.Location = new Point(12, 148);
+        txtFriendTargetUserId.Location = new Point(12, 148);
+        txtFriendTargetUserId.Size = new Size(300, 23);
+
+        lblFriendList.AutoSize = true;
+        lblFriendList.Location = new Point(12, 177);
+        lblFriendList.Text = "好友列表（用于 Block/Unblock/Accept/Remove）";
+
+        lstFriendUsers.Location = new Point(12, 197);
         lstFriendUsers.Size = new Size(300, 94);
         lstFriendUsers.SelectionMode = SelectionMode.One;
+        lstFriendUsers.SelectedIndexChanged += lstFriendUsers_SelectedIndexChanged;
 
-        btnCreateFriendshipRequest.Location = new Point(12, 249);
+        btnCreateFriendshipRequest.Location = new Point(12, 298);
         btnCreateFriendshipRequest.Size = new Size(300, 30);
         btnCreateFriendshipRequest.Text = "CreateFriendshipRequest";
         btnCreateFriendshipRequest.Click += btnCreateFriendshipRequest_Click;
 
-        btnCreateFriendshipWithDifferentTenant.Location = new Point(12, 285);
+        btnCreateFriendshipWithDifferentTenant.Location = new Point(12, 334);
         btnCreateFriendshipWithDifferentTenant.Size = new Size(300, 30);
         btnCreateFriendshipWithDifferentTenant.Text = "CreateFriendshipWithDifferentTenant";
         btnCreateFriendshipWithDifferentTenant.Click += btnCreateFriendshipWithDifferentTenant_Click;
 
-        btnCreateFriendshipForCurrentTenant.Location = new Point(12, 321);
+        btnCreateFriendshipForCurrentTenant.Location = new Point(12, 370);
         btnCreateFriendshipForCurrentTenant.Size = new Size(300, 30);
         btnCreateFriendshipForCurrentTenant.Text = "CreateFriendshipForCurrentTenant";
         btnCreateFriendshipForCurrentTenant.Click += btnCreateFriendshipForCurrentTenant_Click;
 
-        btnBlockUser.Location = new Point(12, 357);
+        btnBlockUser.Location = new Point(12, 406);
         btnBlockUser.Size = new Size(145, 30);
         btnBlockUser.Text = "BlockUser";
         btnBlockUser.Click += btnBlockUser_Click;
 
-        btnUnblockUser.Location = new Point(167, 357);
+        btnUnblockUser.Location = new Point(167, 406);
         btnUnblockUser.Size = new Size(145, 30);
         btnUnblockUser.Text = "UnblockUser";
         btnUnblockUser.Click += btnUnblockUser_Click;
 
-        btnAcceptFriendshipRequest.Location = new Point(12, 393);
+        btnAcceptFriendshipRequest.Location = new Point(12, 442);
         btnAcceptFriendshipRequest.Size = new Size(300, 30);
         btnAcceptFriendshipRequest.Text = "AcceptFriendshipRequest";
         btnAcceptFriendshipRequest.Click += btnAcceptFriendshipRequest_Click;
 
-        btnRemoveFriend.Location = new Point(12, 429);
+        btnRemoveFriend.Location = new Point(12, 478);
         btnRemoveFriend.Size = new Size(300, 30);
         btnRemoveFriend.Text = "RemoveFriend";
         btnRemoveFriend.Click += btnRemoveFriend_Click;
@@ -459,6 +479,8 @@ partial class MainForm
         grpFriendship.Controls.Add(txtFriendTenancyName);
         grpFriendship.Controls.Add(lblFriendUserName);
         grpFriendship.Controls.Add(txtFriendUserName);
+        grpFriendship.Controls.Add(lblFriendTargetUserId);
+        grpFriendship.Controls.Add(txtFriendTargetUserId);
         grpFriendship.Controls.Add(lblFriendList);
         grpFriendship.Controls.Add(lstFriendUsers);
         grpFriendship.Controls.Add(btnCreateFriendshipRequest);
@@ -470,7 +492,7 @@ partial class MainForm
         grpFriendship.Controls.Add(btnRemoveFriend);
 
         // log
-        txtLog.Location = new Point(10, 940);
+        txtLog.Location = new Point(10, 990);
         txtLog.Size = new Size(1660, 75);
         txtLog.Multiline = true;
         txtLog.ScrollBars = ScrollBars.Both;
@@ -481,7 +503,7 @@ partial class MainForm
         // Form
         AutoScaleDimensions = new SizeF(7F, 17F);
         AutoScaleMode = AutoScaleMode.Font;
-        ClientSize = new Size(1680, 1025);
+        ClientSize = new Size(1680, 1080);
         Controls.Add(grpLogin);
         Controls.Add(grpConnection);
         Controls.Add(grpSingle);

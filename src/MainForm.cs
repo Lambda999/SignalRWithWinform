@@ -57,6 +57,7 @@ public partial class MainForm : Form
             txtSystemTitle.Text = cfg.Client.SystemTitle;
             txtFriendTenancyName.Text = cfg.Client.FriendTenancyName;
             txtFriendUserName.Text = cfg.Client.FriendUserName;
+            txtFriendTargetUserId.Text = cfg.Client.FriendTargetUserId;
             txtMessage.Text = cfg.Client.Message;
             _accessToken = cfg.Client.AccessToken;
             SyncHubUrlFromApiBase();
@@ -88,6 +89,7 @@ public partial class MainForm : Form
                     SystemTitle = txtSystemTitle.Text.Trim(),
                     FriendTenancyName = txtFriendTenancyName.Text.Trim(),
                     FriendUserName = txtFriendUserName.Text.Trim(),
+                    FriendTargetUserId = txtFriendTargetUserId.Text.Trim(),
                     Message = txtMessage.Text,
                     AccessToken = _accessToken
                 }
@@ -260,11 +262,11 @@ public partial class MainForm : Form
 
     private async void btnCreateFriendshipRequest_Click(object? sender, EventArgs e)
     {
-        var selectedFriend = GetSelectedFriendFromList();
+        var targetUserId = GetFriendTargetUserId();
         await InvokeFriendshipApi("CreateFriendshipRequest", new
         {
-            tenantId = selectedFriend.TenantId,
-            userId = selectedFriend.UserId
+            tenantId = ParseNullableGuid(txtTenantId.Text),
+            userId = targetUserId
         });
     }
 
@@ -558,36 +560,59 @@ public partial class MainForm : Form
     private object BuildFriendIdentityInput()
     {
         var tenantId = ParseNullableGuid(txtTenantId.Text) ?? _lastFriendTenantId;
-        var userId = ParseNullableGuid(txtUserId.Text) ?? _lastFriendUserId;
-        if (!userId.HasValue)
-        {
-            throw new InvalidOperationException("Target UserId 不能为空");
-        }
+        var userId = GetFriendTargetUserId();
 
         return new
         {
             tenantId,
-            userId = userId.Value
+            userId
         };
     }
 
-    private OnlineUserListItem GetSelectedFriendFromList()
+    private Guid GetFriendTargetUserId()
     {
-        if (lstFriendUsers.SelectedItem is not OnlineUserListItem selectedFriend)
+        if (Guid.TryParse(txtFriendTargetUserId.Text.Trim(), out var friendUserId))
         {
-            throw new InvalidOperationException("请先在好友列表中选择一条记录，再调用 CreateFriendshipRequest");
+            return friendUserId;
         }
 
-        if (selectedFriend.UserId == Guid.Empty)
+        if (_lastFriendUserId.HasValue)
         {
-            throw new InvalidOperationException("所选好友记录缺少有效 UserId");
+            txtFriendTargetUserId.Text = _lastFriendUserId.Value.ToString();
+            return _lastFriendUserId.Value;
         }
 
-        txtTenantId.Text = selectedFriend.TenantId?.ToString() ?? "";
-        txtUserId.Text = selectedFriend.UserId.ToString();
-        txtFriendTenancyName.Text = selectedFriend.TenancyName;
-        txtFriendUserName.Text = selectedFriend.UserName;
-        return selectedFriend;
+        throw new InvalidOperationException("Friendship Target UserId 无效，请先从列表选择或手动填写有效 GUID");
+    }
+
+    private void lstOnlineUsers_SelectedIndexChanged(object? sender, EventArgs e)
+    {
+        if (lstOnlineUsers.SelectedItem is OnlineUserListItem selectedUser)
+        {
+            FillFriendTargetFromUser(selectedUser);
+        }
+    }
+
+    private void lstFriendUsers_SelectedIndexChanged(object? sender, EventArgs e)
+    {
+        if (lstFriendUsers.SelectedItem is OnlineUserListItem selectedFriend)
+        {
+            FillFriendTargetFromUser(selectedFriend);
+        }
+    }
+
+    private void FillFriendTargetFromUser(OnlineUserListItem user)
+    {
+        if (user.UserId == Guid.Empty)
+        {
+            return;
+        }
+
+        txtTenantId.Text = user.TenantId?.ToString() ?? "";
+        txtUserId.Text = user.UserId.ToString();
+        txtFriendTargetUserId.Text = user.UserId.ToString();
+        txtFriendTenancyName.Text = user.TenancyName;
+        txtFriendUserName.Text = user.UserName;
     }
 
     private void txtApiBaseUrl_TextChanged(object? sender, EventArgs e)
@@ -789,6 +814,7 @@ public sealed class ClientSettings
     public string SystemTitle { get; set; } = "系统通知";
     public string FriendTenancyName { get; set; } = "Default";
     public string FriendUserName { get; set; } = "";
+    public string FriendTargetUserId { get; set; } = "";
     public string Message { get; set; } = "你好，这是一条测试消息。";
     public string AccessToken { get; set; } = "";
 }

@@ -27,7 +27,9 @@
   - `/api/services/app/Friendship/UnblockUser`
   - `/api/services/app/Friendship/AcceptFriendshipRequest`
   - `/api/services/app/Friendship/RemoveFriend`
-  - `CreateFriendshipRequest` 会使用“好友列表”中当前选中记录的 `tenantId/userId` 作为参数
+  - Friendship 分组新增 `Target UserId` 文本框（可手动修改）
+  - 两个列表（在线用户/好友）选中后都会把 `UserId` 回填到该文本框
+  - `CreateFriendshipRequest` 与 `Block/Unblock/Accept/Remove` 的目标 `userId` 均来自该文本框
 - 接收事件：
   - `ReceiveMessage`
   - `ReceiveGroupMessage`
